@@ -87,18 +87,18 @@ This document outlines the implementation plan for V1 of the AI Business OS plat
 ---
 
 ### Stage 3: Connectors and Ingestion
-**Status**: Pending
+**Status**: In Progress
 
 #### 3.1 Connector Framework
-- [ ] Create `/packages/connectors` base structure
-- [ ] Define connector interface
-- [ ] Implement connection storage and OAuth handling
+- [x] Create `/packages/connectors` base structure
+- [x] Define connector interface
+- [x] Implement connection storage and OAuth handling (API routes created)
 
 #### 3.2 Shopify Connector (Ecommerce V1)
-- [ ] Implement Shopify OAuth flow
-- [ ] Create order ingestion
-- [ ] Create product ingestion
-- [ ] Create customer ingestion
+- [x] Implement Shopify OAuth flow (API routes: /api/connectors/shopify)
+- [x] Create order ingestion (sync logic scaffolded)
+- [x] Create product ingestion (sync logic scaffolded)
+- [x] Create customer ingestion (sync logic scaffolded)
 
 #### 3.3 Normalized Data Schema
 - [ ] Ecommerce schema: orders, order_items, products, customers
@@ -242,23 +242,23 @@ This document outlines the implementation plan for V1 of the AI Business OS plat
 
 ## Current Task
 
-**Stage 3 - Connectors and Ingestion**
+**Stage 3 - Connectors and Ingestion (Completing)**
 
-Stage 2 is complete. The authentication flow, data model, and onboarding are implemented.
+The connector framework and Shopify OAuth flow are implemented. UI for connector management is ready.
 
 Next steps:
 1. Set up Supabase project and add credentials to `.env.local`
 2. Run `pnpm db:push` to create database tables
-3. Test the auth flow and workspace creation
-4. Implement the Connector Framework
-5. Build the Shopify connector for ecommerce
+3. Test the full auth and connector flow
+4. Implement actual database writes in sync functions
+5. Set up worker jobs for scheduled syncing
 
 Subtasks:
-1. Create `.env.local` with Supabase and database credentials
+1. Create `.env.local` with Supabase, database, and Shopify credentials
 2. Run `pnpm db:push` to sync schema with database
-3. Create `/packages/connectors` base structure implementation
-4. Define connector interface
-5. Implement connection storage and OAuth handling
+3. Complete the database write logic in sync functions (orders, products, customers)
+4. Create sync trigger API route
+5. Wire up the worker scheduler
 
 ---
 
