@@ -122,3 +122,32 @@ export {
   type SSEConnection,
   DEFAULT_BATCH_CONFIG,
 } from './realtime';
+
+// GA4 Connector exports
+export {
+  GA4Connector,
+  GA4Client,
+  syncGA4Sessions,
+  syncGA4Pageviews,
+  syncGA4Events,
+  syncGA4TrafficSources,
+  syncGA4Channels,
+  syncGA4UserAcquisition,
+  syncGA4Conversions,
+  GA4_CONVERSION_EVENTS,
+  GA4_DIMENSIONS,
+  GA4_METRICS,
+  type GA4ClientConfig,
+  type GA4Dimension,
+  type GA4Metric,
+  type GA4DateRange,
+  type GA4FilterExpression,
+  type GA4RunReportRequest,
+  type GA4RunReportResponse,
+  type GA4Row,
+  type GA4OAuthConfig,
+  type GA4TokenResponse,
+  type GA4SyncOptions,
+  type GA4DimensionName,
+  type GA4MetricName,
+} from './ga4';

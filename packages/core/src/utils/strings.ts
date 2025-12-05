@@ -40,13 +40,39 @@ export function titleCase(text: string): string {
 /**
  * Generate a random ID
  */
-export function generateId(length: number = 12): string {
+export function generateId(lengthOrKey: number | string = 12): string {
+  // If a string key is provided, generate a deterministic hash-based ID
+  if (typeof lengthOrKey === 'string') {
+    return generateHashId(lengthOrKey);
+  }
+  
+  // Otherwise generate a random ID of specified length
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < lengthOrKey; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+/**
+ * Generate a deterministic hash-based ID from a key
+ * Uses a simple hash function suitable for generating unique IDs
+ */
+export function generateHashId(key: string): string {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    const char = key.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Convert to base36 and ensure positive value
+  const positiveHash = Math.abs(hash);
+  const hashStr = positiveHash.toString(36);
+  
+  // Add a prefix and pad to ensure consistent length
+  return `id_${hashStr.padStart(8, '0')}`;
 }
 
 /**

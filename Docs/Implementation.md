@@ -490,13 +490,16 @@ Traditional BI is reactive: users ask questions and get answers. AI Business OS 
 
 #### 11.2 Google Analytics 4 Connector
 **Docs**: [GA4 Data API](https://developers.google.com/analytics/devguides/reporting/data/v1)
-- [ ] Implement Google OAuth flow
-- [ ] Create session and pageview ingestion
-- [ ] Create event tracking ingestion
-- [ ] Create traffic source attribution data
-- [ ] Create conversion funnel data extraction
-- [ ] Implement scheduled daily sync
-- [ ] Map GA4 dimensions to internal semantic model
+**Status**: Completed
+- [x] Implement Google OAuth flow (`packages/connectors/src/ga4/client.ts`)
+- [x] Create session and pageview ingestion (`packages/connectors/src/ga4/sessions.ts`, `pageviews.ts`)
+- [x] Create event tracking ingestion (`packages/connectors/src/ga4/events.ts`)
+- [x] Create traffic source attribution data (`packages/connectors/src/ga4/traffic-sources.ts`)
+- [x] Create conversion funnel data extraction (`packages/connectors/src/ga4/conversions.ts`)
+- [x] Implement scheduled daily sync (via connector sync API)
+- [x] Map GA4 dimensions to internal semantic model (`packages/connectors/src/ga4/types.ts`)
+- [x] Create database schema for GA4 data (`packages/data-model/src/schema/ga4.ts`)
+- [x] Create API routes for connector setup and sync (`apps/web/src/app/api/connectors/ga4/`)
 
 #### 11.3 Tiendanube Connector (LatAm Focus)
 **Docs**: [Tiendanube API](https://tiendanube.github.io/api-documentation/)

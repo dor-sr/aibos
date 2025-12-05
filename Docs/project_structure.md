@@ -224,7 +224,15 @@ packages/connectors/
 │   │   ├── metric-service.ts     # Real-time metric recalculation
 │   │   └── anomaly-detector.ts   # Real-time anomaly detection
 │   ├── ga4/
-│   │   └── index.ts              # Scaffold
+│   │   ├── index.ts              # Module exports
+│   │   ├── client.ts             # GA4 Data API client
+│   │   ├── connector.ts          # Main connector class
+│   │   ├── types.ts              # Type definitions
+│   │   ├── sessions.ts           # Session data sync
+│   │   ├── pageviews.ts          # Pageview data sync
+│   │   ├── events.ts             # Event tracking sync
+│   │   ├── traffic-sources.ts    # Traffic attribution sync
+│   │   └── conversions.ts        # Conversion data sync
 │   └── tiendanube/
 │       └── index.ts              # Scaffold
 ├── tsconfig.json
