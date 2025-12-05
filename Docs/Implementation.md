@@ -392,7 +392,31 @@ The **Agent Playground** (`/playground`) allows testing the Analytics Agent with
 | `/dashboard/connectors` | Data source management |
 | `/dashboard/reports` | View generated reports |
 | `/dashboard/settings` | Workspace settings |
+| `/dashboard/marketing` | Marketing Agent dashboard |
+| `/dashboard/operations` | Commerce Ops dashboard |
+| `/dashboard/builder` | Dashboard builder |
+| `/dashboard/developer` | Developer settings and API keys |
 | `/playground` | Agent testing (no auth required) |
+| `/pricing` | Pricing page |
+
+### Public Documentation Routes
+
+| Route | Description |
+|-------|-------------|
+| `/docs` | Documentation home |
+| `/docs/getting-started` | Quick start guide |
+| `/docs/features` | Features overview |
+| `/docs/connectors` | Connectors overview |
+| `/docs/connectors/shopify` | Shopify connector docs |
+| `/docs/connectors/stripe` | Stripe connector docs |
+| `/docs/connectors/google-analytics` | GA4 connector docs |
+| `/docs/agents/analytics` | Analytics Agent docs |
+| `/docs/agents/marketing` | Marketing Agent docs |
+| `/docs/agents/commerce-ops` | Commerce Ops Agent docs |
+| `/docs/api` | API reference overview |
+| `/docs/api/authentication` | API authentication guide |
+| `/docs/api/endpoints` | API endpoints reference |
+| `/docs/api/webhooks` | Webhooks documentation |
 
 ---
 

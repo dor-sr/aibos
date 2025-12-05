@@ -49,15 +49,43 @@ apps/web/
 │   │   │   └── page.tsx
 │   │   └── layout.tsx
 │   ├── (dashboard)/              # Dashboard route group (protected)
-│   │   ├── overview/
-│   │   │   └── page.tsx
-│   │   ├── settings/
-│   │   │   └── page.tsx
-│   │   ├── connectors/
-│   │   │   └── page.tsx
+│   │   ├── dashboard/
+│   │   │   ├── page.tsx          # Main dashboard
+│   │   │   ├── connectors/
+│   │   │   ├── reports/
+│   │   │   ├── settings/
+│   │   │   ├── marketing/
+│   │   │   ├── operations/
+│   │   │   ├── builder/
+│   │   │   ├── developer/
+│   │   │   └── ...
 │   │   └── layout.tsx
+│   ├── (docs)/                   # Public documentation (no auth)
+│   │   ├── layout.tsx            # Docs layout with sidebar
+│   │   └── docs/
+│   │       ├── page.tsx          # Docs home
+│   │       ├── getting-started/
+│   │       ├── features/
+│   │       ├── connectors/
+│   │       │   ├── page.tsx
+│   │       │   ├── shopify/
+│   │       │   ├── stripe/
+│   │       │   └── google-analytics/
+│   │       ├── agents/
+│   │       │   ├── analytics/
+│   │       │   ├── marketing/
+│   │       │   └── commerce-ops/
+│   │       └── api/
+│   │           ├── page.tsx
+│   │           ├── authentication/
+│   │           ├── endpoints/
+│   │           └── webhooks/
+│   ├── pricing/
+│   │   └── page.tsx              # Pricing page
 │   ├── onboarding/
 │   │   └── page.tsx
+│   ├── playground/
+│   │   └── page.tsx              # Agent playground
 │   ├── api/
 │   │   ├── auth/
 │   │   │   └── [...supabase]/
@@ -66,6 +94,8 @@ apps/web/
 │   │   │   └── route.ts
 │   │   ├── analytics/
 │   │   │   └── route.ts
+│   │   ├── v1/                   # Public API v1
+│   │   │   └── ...
 │   │   └── webhooks/
 │   │       └── route.ts
 │   ├── layout.tsx                # Root layout

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, BarChart3, Zap, ShoppingCart } from 'lucide-react';
+import { ArrowRight, BarChart3, Zap, ShoppingCart, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Home() {
@@ -14,7 +14,13 @@ export default function Home() {
             </div>
             <span className="font-semibold text-lg">AI Business OS</span>
           </div>
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-6">
+            <Link href="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Docs
+            </Link>
+            <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Pricing
+            </Link>
             <Link href="/login">
               <Button variant="ghost">Sign In</Button>
             </Link>
@@ -87,8 +93,17 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t mt-32 py-8">
-        <div className="container mx-auto px-4 text-center text-slate-500 text-sm">
-          AI Business OS - Built for founders and operators
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-slate-500 text-sm">
+              AI Business OS - Built for founders and operators
+            </div>
+            <nav className="flex items-center gap-6 text-sm text-slate-500">
+              <Link href="/docs" className="hover:text-slate-700">Documentation</Link>
+              <Link href="/pricing" className="hover:text-slate-700">Pricing</Link>
+              <Link href="/docs/api" className="hover:text-slate-700">API</Link>
+            </nav>
+          </div>
         </div>
       </footer>
     </div>
