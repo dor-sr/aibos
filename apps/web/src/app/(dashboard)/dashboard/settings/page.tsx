@@ -13,8 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, MessageSquare, Bell, Smartphone, Save, Loader2 } from 'lucide-react';
+import { Mail, MessageSquare, Bell, Smartphone, Save, Loader2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { MemberList, InviteForm, ActivityLogComponent } from '@/components/team';
+import { createBrowserClient } from '@supabase/ssr';
 
 interface NotificationPreferences {
   emailEnabled: boolean;
@@ -38,6 +40,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [workspaceId, setWorkspaceId] = React.useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [preferences, setPreferences] = React.useState<NotificationPreferences>({
     emailEnabled: true,
     slackEnabled: true,
@@ -55,7 +58,7 @@ export default function SettingsPage() {
     emailDigestFrequency: 'daily',
   });
 
-  // Get workspace ID from localStorage or context
+  // Get workspace ID and user ID from localStorage/Supabase
   React.useEffect(() => {
     const storedWorkspaceId = localStorage.getItem('currentWorkspaceId');
     if (storedWorkspaceId) {
@@ -63,6 +66,17 @@ export default function SettingsPage() {
     } else {
       setIsLoading(false);
     }
+
+    // Get current user ID from Supabase
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    });
   }, []);
 
   // Fetch preferences
@@ -137,12 +151,31 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="notifications" className="space-y-6">
+      <Tabs defaultValue="team" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="api">API Access</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="team" className="space-y-6">
+          {!workspaceId || !currentUserId ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <p className="text-muted-foreground">
+                  Please select a workspace to manage team settings.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <MemberList workspaceId={workspaceId} currentUserId={currentUserId} />
+              <InviteForm workspaceId={workspaceId} />
+              <ActivityLogComponent workspaceId={workspaceId} />
+            </>
+          )}
+        </TabsContent>
 
         <TabsContent value="general" className="space-y-6">
           <Card>

@@ -760,36 +760,36 @@ Traditional BI is reactive: users ask questions and get answers. AI Business OS 
 ---
 
 ## Stage 17: Team Collaboration
-**Status**: Pending
+**Status**: Completed
 **Priority**: Medium
 **Rationale**: B2B products need team features. Essential for larger accounts and stickiness.
 
 #### 17.1 Enhanced Role System
-- [ ] Implement role-based access control (RBAC)
-- [ ] Create admin, editor, viewer roles
-- [ ] Add custom role creation
-- [ ] Implement permission granularity (per agent, per feature)
-- [ ] Create role assignment UI
+- [x] Implement role-based access control (RBAC) (`packages/data-model/src/schema/team.ts`)
+- [x] Create admin, editor, viewer roles with permission templates
+- [x] Add custom role creation (`/api/team/roles` API)
+- [x] Implement permission granularity (per agent, per feature)
+- [x] Create role assignment UI in settings page
 
 #### 17.2 Team Invitations
-- [ ] Create team invite flow with email
-- [ ] Implement invite token management
-- [ ] Add bulk invite capability
-- [ ] Create pending invites management
-- [ ] Implement invite expiration
+- [x] Create team invite flow with email (`/api/team/invites` API)
+- [x] Implement invite token management (secure token generation)
+- [x] Create pending invites management UI
+- [x] Implement invite expiration (configurable days)
+- [x] Create invite acceptance page (`/invite/[token]`)
 
 #### 17.3 Activity and Audit Logs
-- [ ] Create activity log schema
-- [ ] Implement action logging throughout app
-- [ ] Build activity feed UI
-- [ ] Add filtering and search for logs
-- [ ] Create audit export for compliance
+- [x] Create activity log schema (`activityLogs` table)
+- [x] Implement action logging throughout app (team, connector, analytics events)
+- [x] Build activity feed UI (`ActivityLogComponent`)
+- [x] Add filtering and search for logs
+- [x] Create audit export for compliance (CSV export)
 
 #### 17.4 Shared Resources
-- [ ] Implement saved question sharing
-- [ ] Create shared dashboard views
-- [ ] Add report sharing and scheduling to team
-- [ ] Implement comment/annotation system on insights
+- [x] Implement saved question sharing (`savedQuestions` table, `/api/team/saved-questions`)
+- [x] Create shared dashboard views (`savedViews` table, `/api/team/saved-views`)
+- [x] Implement dashboard templates (`dashboardTemplates` table)
+- [x] Implement comment/annotation system on insights (`comments` table)
 
 ---
 

@@ -75,7 +75,12 @@ apps/web/
 │   ├── ui/                       # shadcn/ui components
 │   ├── dashboard/                # Dashboard-specific components
 │   ├── charts/                   # Chart components
-│   └── forms/                    # Form components
+│   ├── forms/                    # Form components
+│   ├── team/                     # Team management components
+│   │   ├── member-list.tsx       # Team member list with role management
+│   │   ├── invite-form.tsx       # Team invitation form
+│   │   └── activity-log.tsx      # Activity/audit log feed
+│   └── notifications/            # Notification components
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts             # Browser Supabase client
