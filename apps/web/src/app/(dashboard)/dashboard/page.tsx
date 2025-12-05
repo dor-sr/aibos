@@ -41,3 +41,4 @@ function ChartSkeleton() {
   return <div className="h-80 rounded-lg border bg-card animate-pulse" />;
 }
 
+

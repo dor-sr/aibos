@@ -123,3 +123,4 @@ export function getSuggestedIntents(verticalType: VerticalType): IntentType[] {
   return common;
 }
 
+

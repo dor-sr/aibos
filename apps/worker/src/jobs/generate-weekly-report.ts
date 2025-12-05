@@ -85,3 +85,4 @@ async function generateAllReports(): Promise<void> {
   logger.info('All weekly reports generated');
 }
 
+

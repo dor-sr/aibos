@@ -88,3 +88,4 @@ export interface InsightCondition {
   value: number;
 }
 
+

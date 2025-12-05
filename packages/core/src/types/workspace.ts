@@ -62,3 +62,4 @@ export interface UpdateWorkspaceInput {
   settings?: Partial<WorkspaceSettings>;
 }
 
+

@@ -66,3 +66,4 @@ export class ToolRegistry {
 // Default global registry
 export const defaultRegistry = new ToolRegistry();
 
+

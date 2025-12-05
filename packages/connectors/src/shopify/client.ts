@@ -238,3 +238,4 @@ export interface ShopifyCustomersResponse {
   customers: ShopifyCustomer[];
 }
 
+

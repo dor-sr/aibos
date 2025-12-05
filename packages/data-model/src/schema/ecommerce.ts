@@ -148,3 +148,4 @@ export type NewEcommerceOrder = typeof ecommerceOrders.$inferInsert;
 export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
 export type NewEcommerceOrderItem = typeof ecommerceOrderItems.$inferInsert;
 
+

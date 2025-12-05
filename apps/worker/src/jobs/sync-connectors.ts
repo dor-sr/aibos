@@ -64,3 +64,4 @@ async function syncAllConnectors(): Promise<void> {
   logger.info('All connectors sync completed');
 }
 
+

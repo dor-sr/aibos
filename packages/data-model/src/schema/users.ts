@@ -37,3 +37,4 @@ export type NewUser = typeof users.$inferInsert;
 export type WorkspaceMembership = typeof workspaceMemberships.$inferSelect;
 export type NewWorkspaceMembership = typeof workspaceMemberships.$inferInsert;
 
+

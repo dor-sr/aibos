@@ -116,3 +116,4 @@ export type NewAnomaly = typeof anomalies.$inferInsert;
 export type QuestionHistory = typeof questionHistory.$inferSelect;
 export type NewQuestionHistory = typeof questionHistory.$inferInsert;
 
+

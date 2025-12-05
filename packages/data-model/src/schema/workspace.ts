@@ -45,3 +45,4 @@ interface WorkspaceSettings {
 export type Workspace = typeof workspaces.$inferSelect;
 export type NewWorkspace = typeof workspaces.$inferInsert;
 
+

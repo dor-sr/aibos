@@ -84,3 +84,4 @@ export type NewConnector = typeof connectors.$inferInsert;
 export type SyncLog = typeof syncLogs.$inferSelect;
 export type NewSyncLog = typeof syncLogs.$inferInsert;
 
+

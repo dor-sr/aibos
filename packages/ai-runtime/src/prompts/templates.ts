@@ -74,3 +74,4 @@ export function createAnalyticsPrompt(variables: {
   return renderTemplate(SYSTEM_PROMPTS.analyticsAgent, variables);
 }
 
+

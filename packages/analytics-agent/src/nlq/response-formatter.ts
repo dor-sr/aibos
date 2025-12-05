@@ -120,3 +120,4 @@ export function formatComparison(
   return `${metric} ${direction} by ${absChange}% from ${formatCompactNumber(previous)} to ${formatCompactNumber(current)}`;
 }
 
+

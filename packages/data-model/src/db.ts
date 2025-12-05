@@ -22,3 +22,4 @@ export const db = drizzle(queryClient, { schema });
 // Export types for use in other packages
 export type Database = typeof db;
 
+

@@ -20,3 +20,4 @@ export default async function OnboardingLayout({ children }: { children: React.R
 
   return <>{children}</>;
 }
+

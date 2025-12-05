@@ -93,3 +93,4 @@ export function formatCompactNumber(value: number): string {
   return value.toLocaleString('en-US');
 }
 
+

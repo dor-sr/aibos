@@ -87,3 +87,4 @@ export interface LLMProviderInterface {
   stream?(request: CompletionRequest): AsyncIterable<StreamChunk>;
 }
 
+

@@ -104,3 +104,4 @@ function stripHtml(html: string | null): string | null {
   return html.replace(/<[^>]*>/g, '').trim();
 }
 
+
