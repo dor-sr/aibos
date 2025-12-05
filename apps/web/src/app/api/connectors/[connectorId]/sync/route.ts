@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { db, connectors, syncLogs } from '@aibos/data-model';
-import { ShopifyClient, syncOrders, syncProducts, syncCustomers } from '@aibos/connectors';
+import { 
+  ShopifyClient, 
+  syncOrders, 
+  syncProducts, 
+  syncCustomers,
+  StripeConnector,
+} from '@aibos/connectors';
 import { generateId } from '@aibos/core';
-import { eq, and } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 interface ConnectorCredentials {
   accessToken?: string;
   shopDomain?: string;
+  apiKey?: string;
   [key: string]: unknown;
 }
 
@@ -47,8 +54,8 @@ export async function POST(
     );
   }
 
-  // Verify connector status
-  if (conn.status !== 'connected') {
+  // Verify connector status - allow 'connected' or 'active'
+  if (!['connected', 'active'].includes(conn.status)) {
     return NextResponse.json(
       { error: 'Connector is not connected' },
       { status: 400 }
@@ -77,8 +84,8 @@ export async function POST(
   await db.insert(syncLogs).values({
     id: syncLogId,
     connectorId: conn.id,
-    workspaceId: conn.workspaceId,
     status: 'running',
+    syncType: conn.lastSyncAt ? 'incremental' : 'full',
     startedAt,
   });
 
@@ -96,6 +103,9 @@ export async function POST(
       case 'shopify':
         recordsProcessed = await syncShopifyConnector(conn);
         break;
+      case 'stripe':
+        recordsProcessed = await syncStripeConnector(conn);
+        break;
       default:
         throw new Error(`Unsupported connector type: ${conn.type}`);
     }
@@ -106,7 +116,7 @@ export async function POST(
       .set({
         status: 'completed',
         completedAt: new Date(),
-        recordsProcessed: JSON.stringify(recordsProcessed),
+        recordsProcessed,
       })
       .where(eq(syncLogs.id, syncLogId));
 
@@ -135,7 +145,7 @@ export async function POST(
       .set({
         status: 'failed',
         completedAt: new Date(),
-        error: errorMessage,
+        errors: [{ type: 'sync_error', message: errorMessage }],
       })
       .where(eq(syncLogs.id, syncLogId));
 
@@ -209,10 +219,11 @@ export async function GET(
     recentSyncs: recentLogs.map((log) => ({
       id: log.id,
       status: log.status,
+      syncType: log.syncType,
       startedAt: log.startedAt,
       completedAt: log.completedAt,
-      recordsProcessed: log.recordsProcessed ? JSON.parse(log.recordsProcessed) : null,
-      error: log.error,
+      recordsProcessed: log.recordsProcessed,
+      errors: log.errors,
     })),
   });
 }
@@ -249,3 +260,46 @@ async function syncShopifyConnector(
   };
 }
 
+async function syncStripeConnector(
+  conn: typeof connectors.$inferSelect
+): Promise<Record<string, number>> {
+  const credentials = conn.credentials as ConnectorCredentials | null;
+
+  if (!credentials?.apiKey) {
+    throw new Error('Missing Stripe API key');
+  }
+
+  // Create Stripe connector instance
+  const stripeConnector = new StripeConnector({
+    id: conn.id,
+    type: 'stripe',
+    workspaceId: conn.workspaceId,
+    credentials: { apiKey: credentials.apiKey },
+    settings: conn.settings ?? {},
+  });
+
+  // Test connection
+  const isConnected = await stripeConnector.testConnection();
+  if (!isConnected) {
+    throw new Error('Failed to connect to Stripe');
+  }
+
+  // Perform sync
+  let result;
+  if (conn.lastSyncAt) {
+    result = await stripeConnector.incrementalSync(conn.lastSyncAt);
+  } else {
+    result = await stripeConnector.fullSync();
+  }
+
+  if (!result.success && result.errors?.length) {
+    throw new Error(result.errors[0]?.message ?? 'Stripe sync failed');
+  }
+
+  return {
+    customers: result.recordsProcessed.customers ?? 0,
+    plans: result.recordsProcessed.plans ?? 0,
+    subscriptions: result.recordsProcessed.subscriptions ?? 0,
+    invoices: result.recordsProcessed.invoices ?? 0,
+  };
+}

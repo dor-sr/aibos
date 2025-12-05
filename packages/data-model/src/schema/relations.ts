@@ -60,10 +60,6 @@ export const syncLogsRelations = relations(syncLogs, ({ one }) => ({
     fields: [syncLogs.connectorId],
     references: [connectors.id],
   }),
-  workspace: one(workspaces, {
-    fields: [syncLogs.workspaceId],
-    references: [workspaces.id],
-  }),
 }));
 
 // Ecommerce relations

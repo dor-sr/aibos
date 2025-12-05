@@ -1,7 +1,13 @@
 import { createLogger, generateId } from '@aibos/core';
 import { db, connectors, syncLogs } from '@aibos/data-model';
-import { ShopifyClient, syncOrders, syncProducts, syncCustomers } from '@aibos/connectors';
-import { eq, and } from 'drizzle-orm';
+import { 
+  ShopifyClient, 
+  syncOrders, 
+  syncProducts, 
+  syncCustomers,
+  StripeConnector,
+} from '@aibos/connectors';
+import { eq, and, inArray } from 'drizzle-orm';
 import type { JobContext } from './index';
 
 const logger = createLogger('jobs:sync-connectors');
@@ -9,6 +15,7 @@ const logger = createLogger('jobs:sync-connectors');
 interface ConnectorCredentials {
   accessToken?: string;
   shopDomain?: string;
+  apiKey?: string;
   [key: string]: unknown;
 }
 
@@ -49,7 +56,7 @@ async function syncSingleConnector(workspaceId: string, connectorId: string): Pr
         eq(connectors.id, connectorId),
         eq(connectors.workspaceId, workspaceId),
         eq(connectors.isEnabled, true),
-        eq(connectors.status, 'connected')
+        inArray(connectors.status, ['connected', 'active'])
       )
     )
     .limit(1);
@@ -76,7 +83,7 @@ async function syncWorkspaceConnectors(workspaceId: string): Promise<void> {
       and(
         eq(connectors.workspaceId, workspaceId),
         eq(connectors.isEnabled, true),
-        eq(connectors.status, 'connected')
+        inArray(connectors.status, ['connected', 'active'])
       )
     );
 
@@ -97,7 +104,7 @@ async function syncAllConnectors(): Promise<void> {
     .where(
       and(
         eq(connectors.isEnabled, true),
-        eq(connectors.status, 'connected')
+        inArray(connectors.status, ['connected', 'active'])
       )
     );
 
@@ -124,8 +131,8 @@ async function runConnectorSync(conn: typeof connectors.$inferSelect): Promise<v
   await db.insert(syncLogs).values({
     id: syncLogId,
     connectorId: conn.id,
-    workspaceId: conn.workspaceId,
     status: 'running',
+    syncType: conn.lastSyncAt ? 'incremental' : 'full',
     startedAt,
   });
 
@@ -142,6 +149,9 @@ async function runConnectorSync(conn: typeof connectors.$inferSelect): Promise<v
       case 'shopify':
         recordsProcessed = await syncShopifyConnector(conn);
         break;
+      case 'stripe':
+        recordsProcessed = await syncStripeConnector(conn);
+        break;
       // Add other connector types here
       default:
         logger.warn('Unknown connector type', { type: conn.type });
@@ -153,7 +163,7 @@ async function runConnectorSync(conn: typeof connectors.$inferSelect): Promise<v
       .set({
         status: 'completed',
         completedAt: new Date(),
-        recordsProcessed: JSON.stringify(recordsProcessed),
+        recordsProcessed,
       })
       .where(eq(syncLogs.id, syncLogId));
 
@@ -182,7 +192,7 @@ async function runConnectorSync(conn: typeof connectors.$inferSelect): Promise<v
       .set({
         status: 'failed',
         completedAt: new Date(),
-        error: errorMessage,
+        errors: [{ type: 'sync_error', message: errorMessage }],
       })
       .where(eq(syncLogs.id, syncLogId));
 
@@ -233,4 +243,46 @@ async function syncShopifyConnector(
   };
 }
 
+async function syncStripeConnector(
+  conn: typeof connectors.$inferSelect
+): Promise<Record<string, number>> {
+  const credentials = conn.credentials as ConnectorCredentials | null;
 
+  if (!credentials?.apiKey) {
+    throw new Error('Missing Stripe API key');
+  }
+
+  // Create Stripe connector instance
+  const stripeConnector = new StripeConnector({
+    id: conn.id,
+    type: 'stripe',
+    workspaceId: conn.workspaceId,
+    credentials: { apiKey: credentials.apiKey },
+    settings: conn.settings ?? {},
+  });
+
+  // Test connection
+  const isConnected = await stripeConnector.testConnection();
+  if (!isConnected) {
+    throw new Error('Failed to connect to Stripe');
+  }
+
+  // Perform sync
+  let result;
+  if (conn.lastSyncAt) {
+    result = await stripeConnector.incrementalSync(conn.lastSyncAt);
+  } else {
+    result = await stripeConnector.fullSync();
+  }
+
+  if (!result.success && result.errors?.length) {
+    throw new Error(result.errors[0]?.message ?? 'Stripe sync failed');
+  }
+
+  return {
+    customers: result.recordsProcessed.customers ?? 0,
+    plans: result.recordsProcessed.plans ?? 0,
+    subscriptions: result.recordsProcessed.subscriptions ?? 0,
+    invoices: result.recordsProcessed.invoices ?? 0,
+  };
+}

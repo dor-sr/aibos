@@ -15,6 +15,8 @@ export const connectorTypeEnum = pgEnum('connector_type', [
 export const connectorStatusEnum = pgEnum('connector_status', [
   'pending',
   'connected',
+  'active',
+  'syncing',
   'error',
   'disconnected',
 ]);
@@ -33,7 +35,7 @@ export const connectors = pgTable('connectors', {
     .notNull()
     .references(() => workspaces.id, { onDelete: 'cascade' }),
   type: connectorTypeEnum('type').notNull(),
-  name: text('name').notNull(),
+  name: text('name'), // Optional - auto-generated if not provided
   status: connectorStatusEnum('status').notNull().default('pending'),
   credentials: jsonb('credentials').$type<ConnectorCredentials>(),
   settings: jsonb('settings').$type<ConnectorSettings>(),
@@ -51,14 +53,12 @@ export const syncLogs = pgTable('sync_logs', {
   connectorId: text('connector_id')
     .notNull()
     .references(() => connectors.id, { onDelete: 'cascade' }),
-  workspaceId: text('workspace_id')
-    .notNull()
-    .references(() => workspaces.id, { onDelete: 'cascade' }),
   status: syncStatusEnum('status').notNull(),
+  syncType: text('sync_type'), // 'full' or 'incremental'
   startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
   completedAt: timestamp('completed_at', { withTimezone: true }),
-  recordsProcessed: text('records_processed'), // JSON string of counts
-  error: text('error'),
+  recordsProcessed: jsonb('records_processed').$type<Record<string, number>>(),
+  errors: jsonb('errors').$type<Array<{ type: string; message: string; recordId?: string }>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

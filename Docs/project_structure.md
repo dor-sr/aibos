@@ -195,10 +195,15 @@ packages/connectors/
 │   │   ├── products.ts           # Product sync
 │   │   └── customers.ts          # Customer sync
 │   ├── stripe/
-│   │   ├── index.ts
-│   │   ├── client.ts
-│   │   ├── subscriptions.ts
-│   │   └── invoices.ts
+│   │   ├── index.ts              # Module exports
+│   │   ├── client.ts             # Stripe API client
+│   │   ├── connector.ts          # Main connector class
+│   │   ├── customers.ts          # Customer sync
+│   │   ├── plans.ts              # Plans/prices sync  
+│   │   ├── subscriptions.ts      # Subscription sync
+│   │   ├── invoices.ts           # Invoice sync
+│   │   ├── webhooks.ts           # Webhook handlers
+│   │   └── metrics.ts            # MRR/ARR calculations
 │   ├── ga4/
 │   │   └── index.ts              # Scaffold
 │   └── tiendanube/
@@ -319,6 +324,283 @@ Docs/
 ├── project_structure.md          # This file
 ├── UI_UX_doc.md                  # Design system guidelines
 └── Bug_tracking.md               # Issue tracking
+```
+
+---
+
+## V2+ Planned Expansions
+
+### Additional Connectors (packages/connectors)
+
+```
+packages/connectors/
+├── src/
+│   ├── ...existing...
+│   ├── stripe/
+│   │   ├── index.ts
+│   │   ├── client.ts             # Stripe API client
+│   │   ├── auth.ts               # API key setup
+│   │   ├── subscriptions.ts      # Subscription sync
+│   │   ├── invoices.ts           # Invoice sync
+│   │   ├── customers.ts          # Customer sync
+│   │   └── webhooks.ts           # Webhook handlers
+│   ├── ga4/
+│   │   ├── index.ts
+│   │   ├── client.ts             # GA4 Data API client
+│   │   ├── auth.ts               # Google OAuth
+│   │   ├── sessions.ts           # Session data
+│   │   ├── events.ts             # Event tracking
+│   │   └── traffic.ts            # Traffic sources
+│   ├── tiendanube/
+│   │   ├── index.ts
+│   │   ├── client.ts             # Tiendanube API client
+│   │   ├── auth.ts               # OAuth handling
+│   │   ├── orders.ts             # Order sync
+│   │   ├── products.ts           # Product sync
+│   │   └── customers.ts          # Customer sync
+│   ├── mercadolibre/
+│   │   ├── index.ts
+│   │   ├── client.ts             # ML API client
+│   │   ├── auth.ts               # OAuth handling
+│   │   ├── orders.ts             # Marketplace orders
+│   │   ├── listings.ts           # Product listings
+│   │   └── questions.ts          # Q&A handling
+│   ├── meta-ads/
+│   │   ├── index.ts
+│   │   ├── client.ts             # Marketing API client
+│   │   ├── auth.ts               # Facebook OAuth
+│   │   ├── campaigns.ts          # Campaign data
+│   │   ├── adsets.ts             # Ad set performance
+│   │   └── creatives.ts          # Creative assets
+│   └── google-ads/
+│       ├── index.ts
+│       ├── client.ts             # Google Ads API client
+│       ├── auth.ts               # Google OAuth
+│       ├── campaigns.ts          # Campaign data
+│       └── keywords.ts           # Keyword performance
+```
+
+### Enhanced Marketing Agent
+
+```
+packages/marketing-agent/
+├── src/
+│   ├── index.ts                  # Public exports
+│   ├── agent.ts                  # Main agent class
+│   ├── types.ts                  # Type definitions
+│   ├── nlq/
+│   │   ├── index.ts
+│   │   ├── intent.ts             # Marketing intent detection
+│   │   ├── query-mapper.ts       # Marketing query patterns
+│   │   └── response-formatter.ts # Marketing responses
+│   ├── metrics/
+│   │   ├── index.ts
+│   │   ├── spend.ts              # Spend calculations
+│   │   ├── roas.ts               # ROAS analysis
+│   │   └── cac.ts                # CAC calculations
+│   ├── recommendations/
+│   │   ├── index.ts
+│   │   ├── budget.ts             # Budget recommendations
+│   │   ├── campaigns.ts          # Campaign suggestions
+│   │   └── creatives.ts          # Creative suggestions
+│   └── generation/
+│       ├── index.ts
+│       ├── ad-copy.ts            # Ad copy generation
+│       ├── headlines.ts          # Headline variations
+│       └── briefs.ts             # Creative briefs
+```
+
+### Enhanced Commerce Ops Agent
+
+```
+packages/commerce-ops-agent/
+├── src/
+│   ├── index.ts                  # Public exports
+│   ├── agent.ts                  # Main agent class
+│   ├── types.ts                  # Type definitions
+│   ├── nlq/
+│   │   ├── index.ts
+│   │   ├── intent.ts             # Commerce intent detection
+│   │   └── query-mapper.ts       # Inventory/pricing queries
+│   ├── inventory/
+│   │   ├── index.ts
+│   │   ├── tracker.ts            # Stock tracking
+│   │   ├── forecaster.ts         # Demand forecasting
+│   │   └── alerts.ts             # Stockout/overstock alerts
+│   ├── pricing/
+│   │   ├── index.ts
+│   │   ├── analyzer.ts           # Margin analysis
+│   │   └── optimizer.ts          # Price optimization
+│   └── channels/
+│       ├── index.ts
+│       ├── coordinator.ts        # Multi-channel coordination
+│       └── allocation.ts         # Inventory allocation
+```
+
+### New Packages (V2+)
+
+```
+packages/
+├── ...existing packages...
+├── webhooks/                     # Webhook gateway package
+│   ├── src/
+│   │   ├── index.ts
+│   │   ├── gateway.ts            # Unified webhook handler
+│   │   ├── verifiers/            # Signature verification
+│   │   ├── processors/           # Event processors
+│   │   └── queue.ts              # Event queue
+├── insights/                     # Proactive insights engine
+│   ├── src/
+│   │   ├── index.ts
+│   │   ├── engine.ts             # Insight generation
+│   │   ├── detectors/            # Pattern detectors
+│   │   ├── prioritizer.ts        # Insight ranking
+│   │   └── delivery.ts           # Insight delivery
+├── segmentation/                 # Customer segmentation
+│   ├── src/
+│   │   ├── index.ts
+│   │   ├── rfm.ts                # RFM analysis
+│   │   ├── cohorts.ts            # Cohort builder
+│   │   └── clusters.ts           # Behavioral clustering
+├── attribution/                  # Attribution modeling
+│   ├── src/
+│   │   ├── index.ts
+│   │   ├── models/               # Attribution models
+│   │   └── calculator.ts         # Attribution calculator
+└── api/                          # Public API package
+    ├── src/
+    │   ├── index.ts
+    │   ├── routes/               # API route definitions
+    │   ├── auth/                 # API key authentication
+    │   └── rate-limiter.ts       # Rate limiting
+```
+
+### Enhanced Web App Structure (V2)
+
+```
+apps/web/
+├── src/
+│   ├── app/
+│   │   ├── ...existing routes...
+│   │   ├── (dashboard)/
+│   │   │   ├── ...existing...
+│   │   │   ├── marketing/        # Marketing Agent pages
+│   │   │   │   ├── page.tsx      # Marketing overview
+│   │   │   │   ├── campaigns/    # Campaign management
+│   │   │   │   └── creatives/    # Creative library
+│   │   │   ├── operations/       # Commerce Ops pages
+│   │   │   │   ├── page.tsx      # Operations overview
+│   │   │   │   ├── inventory/    # Inventory management
+│   │   │   │   └── pricing/      # Pricing tools
+│   │   │   ├── insights/         # Proactive insights
+│   │   │   │   └── page.tsx      # Insights feed
+│   │   │   └── builder/          # Dashboard builder
+│   │   │       └── page.tsx      # Custom dashboard creator
+│   │   ├── api/
+│   │   │   ├── ...existing...
+│   │   │   ├── webhooks/
+│   │   │   │   └── [provider]/
+│   │   │   │       └── route.ts  # Webhook endpoints
+│   │   │   ├── marketing/        # Marketing API routes
+│   │   │   ├── operations/       # Commerce Ops API routes
+│   │   │   └── v1/               # Public API v1
+│   │   │       ├── metrics/
+│   │   │       ├── insights/
+│   │   │       └── reports/
+│   │   └── embed/                # Embeddable components
+│   │       └── [type]/
+│   │           └── page.tsx
+│   ├── components/
+│   │   ├── ...existing...
+│   │   ├── marketing/            # Marketing components
+│   │   ├── operations/           # Operations components
+│   │   ├── insights/             # Insight components
+│   │   └── builder/              # Dashboard builder components
+```
+
+---
+
+## V2+ Database Schema Expansions
+
+### Marketing Data Tables (Stage 14)
+
+```sql
+-- Ad platforms
+ad_accounts (id, workspace_id, platform, account_id, name, currency, timezone, created_at)
+ad_campaigns (id, workspace_id, ad_account_id, platform_id, name, status, objective, budget, created_at)
+ad_sets (id, campaign_id, platform_id, name, status, targeting, budget, created_at)
+ads (id, ad_set_id, platform_id, name, status, creative_type, created_at)
+ad_performance (id, ad_id, date, impressions, clicks, spend, conversions, revenue, created_at)
+
+-- Attribution
+attribution_events (id, workspace_id, customer_id, touchpoint_type, channel, campaign_id, timestamp, revenue_attributed)
+```
+
+### Inventory/Operations Tables (Stage 15)
+
+```sql
+-- Inventory management
+inventory_locations (id, workspace_id, name, type, address, created_at)
+inventory_levels (id, workspace_id, product_id, location_id, quantity, reserved, available, updated_at)
+stock_movements (id, workspace_id, product_id, location_id, type, quantity, reason, reference_id, created_at)
+purchase_orders (id, workspace_id, supplier_id, status, expected_date, total, created_at)
+purchase_order_items (id, order_id, product_id, quantity, unit_cost, created_at)
+suppliers (id, workspace_id, name, email, phone, lead_time_days, created_at)
+
+-- Pricing
+price_history (id, workspace_id, product_id, price, compare_at_price, cost, effective_date, created_at)
+competitor_prices (id, workspace_id, product_id, competitor, price, url, last_checked, created_at)
+```
+
+### Insights/Intelligence Tables (Stage 13)
+
+```sql
+-- Proactive insights
+insights (id, workspace_id, type, category, title, description, data, priority, status, created_at, expires_at)
+insight_actions (id, insight_id, user_id, action, created_at)
+
+-- Segmentation
+segments (id, workspace_id, name, type, definition, customer_count, created_at, updated_at)
+segment_memberships (id, segment_id, customer_id, score, created_at)
+
+-- Cohorts
+cohorts (id, workspace_id, name, type, start_date, end_date, customer_count, created_at)
+cohort_metrics (id, cohort_id, period, metric_name, value, created_at)
+
+-- Conversations
+conversations (id, workspace_id, user_id, title, created_at, updated_at)
+conversation_messages (id, conversation_id, role, content, metadata, created_at)
+```
+
+### Developer Platform Tables (Stage 19)
+
+```sql
+-- API access
+api_keys (id, workspace_id, name, key_hash, prefix, scopes, rate_limit, last_used, expires_at, created_at)
+api_usage (id, api_key_id, endpoint, method, status_code, response_time_ms, created_at)
+
+-- Webhooks (outbound)
+webhook_endpoints (id, workspace_id, url, events, secret_hash, status, created_at)
+webhook_deliveries (id, endpoint_id, event_type, payload, status, attempts, last_attempt, created_at)
+```
+
+### Team/Collaboration Tables (Stage 17)
+
+```sql
+-- Enhanced roles
+roles (id, workspace_id, name, permissions, is_custom, created_at)
+user_roles (id, user_id, workspace_id, role_id, created_at)
+
+-- Activity logging
+activity_logs (id, workspace_id, user_id, action, resource_type, resource_id, metadata, created_at)
+
+-- Invitations
+workspace_invites (id, workspace_id, email, role_id, invited_by, token, status, expires_at, created_at)
+
+-- Shared resources
+saved_questions (id, workspace_id, user_id, question, response, is_shared, created_at)
+saved_views (id, workspace_id, user_id, name, type, config, is_shared, created_at)
+dashboard_templates (id, workspace_id, name, config, is_public, created_at)
 ```
 
 ---
