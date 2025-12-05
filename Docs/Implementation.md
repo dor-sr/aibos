@@ -520,17 +520,18 @@ Traditional BI is reactive: users ask questions and get answers. AI Business OS 
 ---
 
 ## Stage 12: Real-Time Infrastructure
-**Status**: Pending
+**Status**: In Progress
 **Priority**: High
 **Rationale**: Polling is inefficient and delayed. Real-time webhooks enable instant insights and faster anomaly detection.
 
 #### 12.1 Webhook Gateway
-- [ ] Create `/api/webhooks/[provider]` unified endpoint
-- [ ] Implement webhook signature verification per provider
-- [ ] Create webhook event queue for reliable processing
-- [ ] Implement idempotency handling for duplicate events
-- [ ] Add webhook retry mechanism with exponential backoff
-- [ ] Create webhook event logging for debugging
+- [x] Create `/api/webhooks/[provider]` unified endpoint
+- [x] Implement webhook signature verification per provider (Stripe, Shopify)
+- [x] Create webhook event queue for reliable processing (webhook_events table)
+- [x] Implement idempotency handling for duplicate events
+- [x] Add webhook retry mechanism with exponential backoff (max 3 attempts)
+- [x] Create webhook event logging for debugging
+- [x] Create webhook management UI in connectors page
 
 #### 12.2 Real-Time Data Pipeline
 - [ ] Implement event streaming from webhooks to database

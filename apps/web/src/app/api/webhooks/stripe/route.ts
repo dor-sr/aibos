@@ -1,33 +1,32 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { db, connectors } from '@aibos/data-model';
-import { StripeClient, processWebhookEvent, STRIPE_WEBHOOK_EVENTS } from '@aibos/connectors';
-import { eq, and } from 'drizzle-orm';
+import {
+  webhookGateway,
+  getSupportedEvents,
+  STRIPE_SUPPORTED_EVENTS,
+} from '@aibos/connectors';
 
 /**
  * POST /api/webhooks/stripe - Handle Stripe webhook events
  *
- * This endpoint receives webhook events from Stripe and processes them
- * to keep our data in sync in real-time.
+ * This is a provider-specific endpoint that delegates to the unified webhook gateway.
+ * For new implementations, use /api/webhooks/[provider] instead.
  *
  * Configuration:
  * 1. Set STRIPE_WEBHOOK_SECRET in environment variables
  * 2. Configure webhook endpoint in Stripe Dashboard:
  *    URL: https://yourdomain.com/api/webhooks/stripe
- *    Events: See STRIPE_WEBHOOK_EVENTS list
+ *    Events: See STRIPE_SUPPORTED_EVENTS list
  */
 export async function POST(request: Request) {
-  const body = await request.text();
+  const rawBody = await request.text();
   const headersList = await headers();
-  const signature = headersList.get('stripe-signature');
-
-  if (!signature) {
-    console.error('Missing Stripe signature header');
-    return NextResponse.json(
-      { error: 'Missing signature' },
-      { status: 400 }
-    );
-  }
+  
+  // Build headers object
+  const headersObj: Record<string, string> = {};
+  headersList.forEach((value, key) => {
+    headersObj[key.toLowerCase()] = value;
+  });
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
@@ -38,98 +37,29 @@ export async function POST(request: Request) {
     );
   }
 
-  // Get the workspace ID from the webhook metadata or account
-  // For now, we'll look up connectors by checking all active Stripe connectors
-  // In production, you might want to use a more efficient lookup method
+  // Delegate to webhook gateway
+  const result = await webhookGateway.handleWebhook(
+    'stripe',
+    rawBody,
+    headersObj,
+    webhookSecret
+  );
 
-  try {
-    // First, find all active Stripe connectors
-    const stripeConnectors = await db.query.connectors.findMany({
-      where: and(
-        eq(connectors.type, 'stripe'),
-        eq(connectors.isEnabled, true)
-      ),
+  if (result.success) {
+    return NextResponse.json({
+      received: true,
+      eventId: result.eventId,
+      action: result.action,
+      objectId: result.objectId,
+      message: result.message,
     });
-
-    if (stripeConnectors.length === 0) {
-      console.warn('No active Stripe connectors found');
-      // Return 200 to acknowledge the webhook (avoid Stripe retries)
-      return NextResponse.json({ received: true, processed: false });
-    }
-
-    // Try to verify the webhook with each connector's API key
-    // This handles multi-tenant scenarios where different workspaces might have different Stripe accounts
-    for (const connector of stripeConnectors) {
-      if (!connector.credentials?.apiKey) continue;
-
-      try {
-        const client = new StripeClient({
-          apiKey: connector.credentials.apiKey as string,
-        });
-
-        // Verify the webhook signature
-        const event = client.constructWebhookEvent(body, signature, webhookSecret);
-
-        // Check if this is an event type we care about
-        if (!STRIPE_WEBHOOK_EVENTS.includes(event.type)) {
-          console.log(`Ignoring unhandled event type: ${event.type}`);
-          return NextResponse.json({
-            received: true,
-            eventType: event.type,
-            action: 'ignored',
-          });
-        }
-
-        // Process the webhook event
-        const result = await processWebhookEvent(event, connector.workspaceId);
-
-        if (result.success) {
-          console.log(`Processed Stripe webhook: ${event.type}`, {
-            eventId: event.id,
-            workspaceId: connector.workspaceId,
-            objectId: result.objectId,
-            action: result.action,
-          });
-
-          return NextResponse.json({
-            received: true,
-            eventType: event.type,
-            eventId: event.id,
-            objectId: result.objectId,
-            action: result.action,
-          });
-        } else {
-          console.error(`Failed to process Stripe webhook: ${event.type}`, {
-            eventId: event.id,
-            error: result.error,
-          });
-
-          return NextResponse.json(
-            {
-              error: 'Failed to process event',
-              details: result.error,
-            },
-            { status: 500 }
-          );
-        }
-      } catch (verificationError) {
-        // If verification fails, try the next connector
-        // This might not be the right account for this webhook
-        continue;
-      }
-    }
-
-    // If we get here, we couldn't verify the webhook with any connector
-    console.error('Could not verify webhook signature with any connector');
+  } else {
     return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 400 }
-    );
-  } catch (error) {
-    console.error('Error processing Stripe webhook:', error);
-    return NextResponse.json(
-      { error: 'Webhook processing failed' },
-      { status: 500 }
+      {
+        error: result.error,
+        eventId: result.eventId,
+      },
+      { status: result.status }
     );
   }
 }
@@ -139,8 +69,9 @@ export async function POST(request: Request) {
  */
 export async function GET() {
   return NextResponse.json({
-    status: 'ready',
-    events: STRIPE_WEBHOOK_EVENTS,
-    configured: !!process.env.STRIPE_WEBHOOK_SECRET,
+    status: process.env.STRIPE_WEBHOOK_SECRET ? 'configured' : 'not_configured',
+    events: STRIPE_SUPPORTED_EVENTS,
+    webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/webhooks/stripe`,
+    message: 'Consider using /api/webhooks/stripe (unified endpoint) for consistency',
   });
 }

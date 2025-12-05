@@ -66,3 +66,32 @@ export {
   type CustomerMetrics,
   type Stripe,
 } from './stripe';
+
+// Webhook Gateway exports
+export {
+  // Gateway
+  webhookGateway,
+  WebhookGateway,
+  type WebhookGatewayResult,
+  // Types
+  type WebhookProvider,
+  type ParsedWebhookEvent,
+  type WebhookVerifier,
+  type WebhookEventProcessor,
+  type VerificationResult,
+  type WebhookGatewayConfig,
+  DEFAULT_GATEWAY_CONFIG,
+  // Verifiers
+  getVerifier,
+  isProviderSupported,
+  getSupportedProviders,
+  stripeVerifier,
+  shopifyVerifier,
+  // Processors
+  getEventProcessor,
+  getSupportedEvents,
+  stripeProcessor,
+  shopifyProcessor,
+  STRIPE_SUPPORTED_EVENTS,
+  SHOPIFY_SUPPORTED_EVENTS,
+} from './webhooks';

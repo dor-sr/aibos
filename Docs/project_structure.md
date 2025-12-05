@@ -204,6 +204,18 @@ packages/connectors/
 │   │   ├── invoices.ts           # Invoice sync
 │   │   ├── webhooks.ts           # Webhook handlers
 │   │   └── metrics.ts            # MRR/ARR calculations
+│   ├── webhooks/                 # Unified webhook gateway
+│   │   ├── index.ts              # Public exports
+│   │   ├── types.ts              # Webhook types
+│   │   ├── gateway.ts            # Main gateway service
+│   │   ├── verifiers/            # Signature verification
+│   │   │   ├── index.ts
+│   │   │   ├── stripe.ts
+│   │   │   └── shopify.ts
+│   │   └── processors/           # Event processors
+│   │       ├── index.ts
+│   │       ├── stripe.ts
+│   │       └── shopify.ts
 │   ├── ga4/
 │   │   └── index.ts              # Scaffold
 │   └── tiendanube/

@@ -6,6 +6,7 @@ import { ecommerceCustomers, ecommerceProducts, ecommerceOrders, ecommerceOrderI
 import { saasPlans, saasCustomers, saasSubscriptions, saasInvoices } from './saas';
 import { reports, anomalies, questionHistory } from './reports';
 import { notificationSettings, notificationLogs } from './notifications';
+import { webhookEvents, webhookConfigs } from './webhooks';
 
 // Workspace relations
 export const workspacesRelations = relations(workspaces, ({ many }) => ({
@@ -23,6 +24,8 @@ export const workspacesRelations = relations(workspaces, ({ many }) => ({
   questionHistory: many(questionHistory),
   notificationSettings: many(notificationSettings),
   notificationLogs: many(notificationLogs),
+  webhookEvents: many(webhookEvents),
+  webhookConfigs: many(webhookConfigs),
 }));
 
 // User relations
@@ -53,6 +56,8 @@ export const connectorsRelations = relations(connectors, ({ one, many }) => ({
     references: [workspaces.id],
   }),
   syncLogs: many(syncLogs),
+  webhookEvents: many(webhookEvents),
+  webhookConfig: many(webhookConfigs),
 }));
 
 export const syncLogsRelations = relations(syncLogs, ({ one }) => ({
@@ -193,6 +198,29 @@ export const notificationLogsRelations = relations(notificationLogs, ({ one }) =
   settings: one(notificationSettings, {
     fields: [notificationLogs.settingsId],
     references: [notificationSettings.id],
+  }),
+}));
+
+// Webhook relations
+export const webhookEventsRelations = relations(webhookEvents, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [webhookEvents.workspaceId],
+    references: [workspaces.id],
+  }),
+  connector: one(connectors, {
+    fields: [webhookEvents.connectorId],
+    references: [connectors.id],
+  }),
+}));
+
+export const webhookConfigsRelations = relations(webhookConfigs, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [webhookConfigs.workspaceId],
+    references: [workspaces.id],
+  }),
+  connector: one(connectors, {
+    fields: [webhookConfigs.connectorId],
+    references: [connectors.id],
   }),
 }));
 
