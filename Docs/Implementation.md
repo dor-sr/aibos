@@ -269,6 +269,108 @@ All stages (1-7) are now complete. The platform includes:
 
 ---
 
+### Stage 9: Agent Playground
+**Status**: Completed
+
+#### 9.1 Testing Infrastructure
+- [x] Create `/playground` page for agent testing
+- [x] Create `/api/playground/ask` route (bypasses auth)
+- [x] Implement demo responses for testing without OpenAI key
+- [x] Add configuration options (vertical type, currency, timezone)
+- [x] Add UI components (tabs, textarea, badge)
+
+---
+
+### Stage 10: Database Migration and Setup
+**Status**: Completed
+
+#### 10.1 Supabase Migrations
+- [x] Create all enum types (vertical_type, plan_type, workspace_status, etc.)
+- [x] Create core tables (workspaces, users, workspace_memberships)
+- [x] Create connector tables (connectors, sync_logs)
+- [x] Create ecommerce tables (customers, products, orders, order_items)
+- [x] Create SaaS tables (plans, customers, subscriptions, invoices)
+- [x] Create reports tables (reports, anomalies, question_history)
+- [x] Create notification tables (notification_settings, notification_logs)
+- [x] Enable Row Level Security (RLS) on all tables
+- [x] Create RLS policies for workspace-based access control
+- [x] Add service role bypass policies for backend operations
+
+#### 10.2 Database Schema Summary
+Total tables created: 18
+- Core: workspaces, users, workspace_memberships
+- Connectors: connectors, sync_logs
+- Ecommerce: ecommerce_customers, ecommerce_products, ecommerce_orders, ecommerce_order_items
+- SaaS: saas_plans, saas_customers, saas_subscriptions, saas_invoices
+- Reports: reports, anomalies, question_history
+- Notifications: notification_settings, notification_logs
+
+---
+
+## Quick Start Guide
+
+### Running the Application
+
+1. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
+
+2. **Set up environment variables:**
+   Create `.env.local` in `apps/web/` with:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://hashyjetienopwnwuxkg.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   DATABASE_URL=your_database_url  # PostgreSQL connection string
+   OPENAI_API_KEY=your_openai_key  # Optional - demo mode works without this
+   ```
+   
+   Note: The `.env.local` file is gitignored and will not be committed.
+
+3. **Push database schema (if using Supabase):**
+   ```bash
+   pnpm db:push
+   ```
+
+4. **Start the development server:**
+   ```bash
+   pnpm dev:web
+   ```
+   Or run directly from the web app:
+   ```bash
+   cd apps/web && pnpm dev
+   ```
+
+5. **Access the application:**
+   - Main app: http://localhost:3000
+   - Agent Playground: http://localhost:3000/playground
+
+### Testing the Analytics Agent
+
+The **Agent Playground** (`/playground`) allows testing the Analytics Agent without authentication:
+
+- Switch between Ecommerce and SaaS verticals
+- Ask natural language questions about business data
+- View intent detection and response timing
+- Works in demo mode without OpenAI API key
+
+### Available Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page |
+| `/login` | User login |
+| `/signup` | User registration |
+| `/onboarding` | Workspace setup |
+| `/dashboard` | Main dashboard (requires auth) |
+| `/dashboard/connectors` | Data source management |
+| `/dashboard/reports` | View generated reports |
+| `/dashboard/settings` | Workspace settings |
+| `/playground` | Agent testing (no auth required) |
+
+---
+
 Next steps for V2:
 1. Add more connectors (Stripe, GA4, Tiendanube)
 2. Integrate actual email provider (Resend/SendGrid/SES)
