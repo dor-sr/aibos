@@ -1,4 +1,8 @@
 import { createLogger } from '@aibos/core';
+import { db, workspaces, reports } from '@aibos/data-model';
+import { eq } from 'drizzle-orm';
+import { generateWeeklyReport as generateReport } from '@aibos/analytics-agent';
+import type { VerticalType } from '@aibos/core';
 import type { JobContext } from './index';
 
 const logger = createLogger('jobs:generate-weekly-report');
@@ -24,66 +28,92 @@ export async function generateWeeklyReport(context: JobContext): Promise<void> {
 async function generateWorkspaceReport(workspaceId: string): Promise<void> {
   logger.info('Generating weekly report for workspace', { workspaceId });
 
-  // TODO: Implement report generation
-  // 1. Get workspace configuration
-  // 2. Calculate metrics for the past week
-  // 3. Compare to previous week
-  // 4. Identify top highlights and concerns
-  // 5. Generate AI summary
-  // 6. Store report in database
-  // 7. Optionally send via email/Slack
+  try {
+    // Get workspace configuration
+    const workspace = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId))
+      .limit(1);
 
-  const reportData = {
-    workspaceId,
-    periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    periodEnd: new Date(),
-    metrics: {
-      revenue: { current: 0, previous: 0, change: 0 },
-      orders: { current: 0, previous: 0, change: 0 },
-      aov: { current: 0, previous: 0, change: 0 },
-      customers: { current: 0, previous: 0, change: 0 },
-    },
-    insights: [],
-    summary: '',
-  };
+    const workspaceData = workspace[0];
+    if (!workspaceData) {
+      logger.warn('Workspace not found', { workspaceId });
+      return;
+    }
 
-  // Generate AI summary
-  reportData.summary = await generateReportSummary(reportData);
+    const verticalType = workspaceData.verticalType as VerticalType;
 
-  // Store report
-  await storeReport(reportData);
+    // Generate the report using analytics-agent
+    const reportData = await generateReport(workspaceId, verticalType);
 
-  logger.info('Workspace weekly report generated', { workspaceId });
-}
+    // Store report in database
+    await db.insert(reports).values({
+      id: `report_${Date.now()}_${workspaceId}`,
+      workspaceId,
+      type: 'weekly',
+      title: `Weekly Report - ${formatDateRange(reportData.periodStart, reportData.periodEnd)}`,
+      summary: reportData.summary,
+      periodStart: reportData.periodStart,
+      periodEnd: reportData.periodEnd,
+      metrics: reportData.metrics,
+      insights: reportData.insights,
+      status: 'generated',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
-async function generateReportSummary(reportData: Record<string, unknown>): Promise<string> {
-  logger.debug('Generating AI summary for report', {
-    workspaceId: reportData.workspaceId,
-  });
-
-  // TODO: Call AI runtime to generate summary
-  // Placeholder for now
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  return 'Weekly performance summary will be generated here using AI.';
-}
-
-async function storeReport(reportData: Record<string, unknown>): Promise<void> {
-  logger.debug('Storing report', { workspaceId: reportData.workspaceId });
-
-  // TODO: Store report in database using data-model
-  await new Promise((resolve) => setTimeout(resolve, 10));
+    logger.info('Workspace weekly report generated and stored', {
+      workspaceId,
+      insightsCount: reportData.insights.length,
+    });
+  } catch (error) {
+    logger.error('Failed to generate workspace report', error as Error, { workspaceId });
+    throw error;
+  }
 }
 
 async function generateAllReports(): Promise<void> {
   logger.info('Generating weekly reports for all workspaces');
 
-  // TODO: Get all active workspaces with reporting enabled
-  // Generate reports in batches
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  try {
+    // Get all active workspaces
+    const allWorkspaces = await db.select().from(workspaces);
 
-  logger.info('All weekly reports generated');
+    logger.info(`Found ${allWorkspaces.length} workspaces for report generation`);
+
+    // Generate reports in batches of 5
+    const batchSize = 5;
+    for (let i = 0; i < allWorkspaces.length; i += batchSize) {
+      const batch = allWorkspaces.slice(i, i + batchSize);
+
+      await Promise.all(
+        batch.map(async (ws) => {
+          try {
+            await generateWorkspaceReport(ws.id);
+          } catch (error) {
+            logger.error('Failed to generate report for workspace', error as Error, {
+              workspaceId: ws.id,
+            });
+          }
+        })
+      );
+
+      // Small delay between batches to avoid overloading
+      if (i + batchSize < allWorkspaces.length) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    logger.info('All weekly reports generated');
+  } catch (error) {
+    logger.error('Failed to generate all reports', error as Error);
+    throw error;
+  }
 }
 
-
-
+function formatDateRange(start: Date, end: Date): string {
+  const formatDate = (d: Date) =>
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${formatDate(start)} - ${formatDate(end)}`;
+}

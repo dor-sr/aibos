@@ -26,6 +26,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@aibos/analytics-agent':
+        specifier: workspace:*
+        version: link:../../packages/analytics-agent
       '@aibos/connectors':
         specifier: workspace:*
         version: link:../../packages/connectors

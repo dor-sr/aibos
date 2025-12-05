@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Sparkles, AlertCircle } from 'lucide-react';
 
 const suggestions = [
   'Why did revenue change last week?',
@@ -13,25 +13,49 @@ const suggestions = [
   'Which channel is driving the most sales?',
 ];
 
+interface AskResponse {
+  success: boolean;
+  answer: string;
+  data?: Record<string, unknown>;
+  intent?: string;
+  demo?: boolean;
+  message?: string;
+}
+
 export function AskBox() {
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState<string | null>(null);
+  const [response, setResponse] = useState<AskResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (q: string) => {
     if (!q.trim()) return;
 
     setLoading(true);
-    setAnswer(null);
+    setResponse(null);
+    setError(null);
 
-    // Simulate API call - in production this would call the analytics agent
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const res = await fetch('/api/analytics/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question: q }),
+      });
 
-    // Demo response
-    setAnswer(
-      `Based on your data from the last 30 days: Revenue increased by 12.5% compared to the previous period, driven primarily by a 15% increase in average order value. Your top-performing product category was Electronics, contributing 34% of total revenue.`
-    );
-    setLoading(false);
+      if (!res.ok) {
+        throw new Error('Failed to process question');
+      }
+
+      const data: AskResponse = await res.json();
+      setResponse(data);
+    } catch (err) {
+      console.error('Ask error:', err);
+      setError('Sorry, I encountered an error processing your question. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,15 +80,16 @@ export function AskBox() {
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="e.g., Why did revenue drop last week?"
               className="pl-10 bg-white"
+              disabled={loading}
             />
           </div>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || !question.trim()}>
             {loading ? 'Thinking...' : 'Ask'}
           </Button>
         </form>
 
         {/* Suggestions */}
-        {!answer && !loading && (
+        {!response && !loading && !error && (
           <div className="mt-4">
             <p className="text-sm text-muted-foreground mb-2">Try asking:</p>
             <div className="flex flex-wrap gap-2">
@@ -84,10 +109,23 @@ export function AskBox() {
           </div>
         )}
 
-        {/* Answer */}
-        {answer && (
+        {/* Error */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
+        {/* Response */}
+        {response && (
           <div className="mt-4 p-4 bg-white rounded-lg border">
-            <p className="text-sm leading-relaxed">{answer}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-line">{response.answer}</p>
+            {response.demo && (
+              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+                Demo response - Connect your data and configure AI to see personalized insights
+              </p>
+            )}
           </div>
         )}
 
@@ -112,6 +150,3 @@ export function AskBox() {
     </Card>
   );
 }
-
-
-
