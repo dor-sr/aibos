@@ -38,6 +38,9 @@ importers:
       '@aibos/data-model':
         specifier: workspace:*
         version: link:../../packages/data-model
+      '@aibos/marketing-agent':
+        specifier: workspace:*
+        version: link:../../packages/marketing-agent
       '@radix-ui/react-avatar':
         specifier: ^1.1.2
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -256,9 +259,18 @@ importers:
 
   packages/marketing-agent:
     dependencies:
+      '@aibos/ai-runtime':
+        specifier: workspace:*
+        version: link:../ai-runtime
       '@aibos/core':
         specifier: workspace:*
         version: link:../core
+      '@aibos/data-model':
+        specifier: workspace:*
+        version: link:../data-model
+      drizzle-orm:
+        specifier: ^0.37.0
+        version: 0.37.0(@types/react@19.2.7)(postgres@3.4.7)(react@19.2.1)
     devDependencies:
       typescript:
         specifier: ^5.7.2

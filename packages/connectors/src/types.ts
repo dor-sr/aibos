@@ -9,7 +9,9 @@ export type ConnectorType =
   | 'stripe'
   | 'ga4'
   | 'meta_ads'
-  | 'google_ads';
+  | 'google_ads'
+  | 'tiktok_ads'
+  | 'linkedin_ads';
 
 export interface ConnectorConfig {
   id: string;

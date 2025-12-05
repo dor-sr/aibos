@@ -16,7 +16,10 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@aibos/core": "workspace:*"
+    "@aibos/core": "workspace:*",
+    "@aibos/ai-runtime": "workspace:*",
+    "@aibos/data-model": "workspace:*",
+    "drizzle-orm": "^0.37.0"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

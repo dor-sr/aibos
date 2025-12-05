@@ -292,13 +292,25 @@ packages/analytics-agent/
 
 ---
 
-### `/packages/marketing-agent` - Marketing Agent Scaffold
+### `/packages/marketing-agent` - Marketing Agent (Full Implementation)
 
 ```
 packages/marketing-agent/
 ├── src/
-│   ├── index.ts                  # Placeholder exports
-│   └── types.ts                  # Interface definitions
+│   ├── index.ts                  # Public exports
+│   ├── agent.ts                  # Main agent class
+│   ├── types.ts                  # Type definitions
+│   ├── metrics/
+│   │   └── index.ts              # Marketing metrics calculations
+│   ├── nlq/
+│   │   ├── index.ts              # NLQ exports
+│   │   ├── handler.ts            # Question handler
+│   │   ├── intent.ts             # Intent detection
+│   │   └── formatter.ts          # Response formatting
+│   ├── recommendations/
+│   │   └── index.ts              # Budget, fatigue recommendations
+│   └── generation/
+│       └── index.ts              # Creative generation
 ├── tsconfig.json
 └── package.json
 ```

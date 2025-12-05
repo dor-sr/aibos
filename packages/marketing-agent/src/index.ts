@@ -1,17 +1,55 @@
 /**
  * Marketing Agent Package
- * 
- * SCAFFOLD - Full implementation planned for V2
- * 
- * This agent will help businesses understand and optimize their marketing:
- * - Channel performance aggregation (Meta Ads, Google Ads, etc.)
- * - Budget allocation suggestions
- * - Creative and copy generation
- * - Campaign insights and recommendations
+ *
+ * Full implementation of the AI-powered Marketing Agent
+ *
+ * Features:
+ * - Natural language queries about marketing performance
+ * - Channel and campaign performance analysis
+ * - Budget allocation recommendations
+ * - Creative fatigue detection
+ * - Ad copy and headline generation
  */
 
+// Main exports
 export * from './types';
-export * from './agent';
+export { MarketingAgent, createMarketingAgent } from './agent';
 
+// NLQ exports
+export {
+  handleMarketingNLQ,
+  detectMarketingIntent,
+  formatCurrency,
+  formatPercent,
+  formatNumber,
+  formatCompactNumber,
+  formatRoas,
+  formatDateRange,
+  formatPeriodLabel,
+  type MarketingNLQRequest,
+} from './nlq';
 
+// Metrics exports
+export {
+  getMarketingMetricsSummary,
+  getChannelPerformance,
+  getCampaignPerformance,
+  getTopCampaigns,
+  getUnderperformingCampaigns,
+  getSpendTrend,
+  getDateRange,
+  getPreviousPeriodRange,
+} from './metrics';
 
+// Recommendations exports
+export {
+  getBudgetRecommendations,
+  detectCreativeFatigue,
+  generateMarketingSuggestions,
+} from './recommendations';
+
+// Generation exports
+export {
+  generateCreatives,
+  generateAdVariations,
+} from './generation';

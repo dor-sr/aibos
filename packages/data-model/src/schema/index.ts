@@ -10,6 +10,7 @@ export * from './webhooks';
 export * from './relations';
 export * from './advanced-analytics';
 export * from './ga4';
+export * from './marketing';
 
 
 
