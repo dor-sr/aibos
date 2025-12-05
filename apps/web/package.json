@@ -12,15 +12,16 @@
   },
   "dependencies": {
     "@aibos/analytics-agent": "workspace:*",
-    "@aibos/core": "workspace:*",
+    "@aibos/commerce-ops-agent": "workspace:*",
     "@aibos/connectors": "workspace:*",
+    "@aibos/core": "workspace:*",
     "@aibos/data-model": "workspace:*",
     "@aibos/marketing-agent": "workspace:*",
-    "drizzle-orm": "^0.37.0",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-dropdown-menu": "^2.1.4",
     "@radix-ui/react-label": "^2.1.1",
+    "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-separator": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.1",
@@ -31,6 +32,7 @@
     "@supabase/supabase-js": "^2.47.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.37.0",
     "lucide-react": "^0.468.0",
     "next": "15.1.0",
     "react": "^19.0.0",
@@ -49,4 +51,3 @@
     "typescript": "^5.7.2"
   }
 }
-

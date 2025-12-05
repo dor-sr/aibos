@@ -3,13 +3,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { BarChart3, Settings, Plug, FileText } from 'lucide-react';
+import { BarChart3, Settings, Plug, FileText, Megaphone, Package } from 'lucide-react';
 
 const navItems = [
   {
     title: 'Overview',
     href: '/dashboard' as const,
     icon: BarChart3,
+  },
+  {
+    title: 'Marketing',
+    href: '/dashboard/marketing' as const,
+    icon: Megaphone,
+  },
+  {
+    title: 'Operations',
+    href: '/dashboard/operations' as const,
+    icon: Package,
   },
   {
     title: 'Connectors',

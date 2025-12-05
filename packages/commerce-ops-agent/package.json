@@ -16,7 +16,9 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@aibos/core": "workspace:*"
+    "@aibos/core": "workspace:*",
+    "@aibos/data-model": "workspace:*",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "typescript": "^5.7.2"
