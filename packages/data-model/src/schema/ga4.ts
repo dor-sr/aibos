@@ -242,3 +242,4 @@ export type GA4UserAcquisition = typeof ga4UserAcquisition.$inferSelect;
 export type NewGA4UserAcquisition = typeof ga4UserAcquisition.$inferInsert;
 
 
+
