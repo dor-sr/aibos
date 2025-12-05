@@ -1,0 +1,28 @@
+{
+  "name": "@aibos/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@aibos/core": "workspace:*",
+    "@aibos/data-model": "workspace:*",
+    "@aibos/connectors": "workspace:*",
+    "@aibos/analytics-agent": "workspace:*",
+    "cron": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/cron": "^2.4.1",
+    "@types/node": "^22.10.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
+
