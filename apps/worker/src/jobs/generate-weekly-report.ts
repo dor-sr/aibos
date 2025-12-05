@@ -2,6 +2,7 @@ import { createLogger } from '@aibos/core';
 import { db, workspaces, reports } from '@aibos/data-model';
 import { eq } from 'drizzle-orm';
 import { generateWeeklyReport as generateReport } from '@aibos/analytics-agent';
+import { sendWeeklyReportNotification } from '../lib/notifications';
 import type { VerticalType } from '@aibos/core';
 import type { JobContext } from './index';
 
@@ -66,6 +67,18 @@ async function generateWorkspaceReport(workspaceId: string): Promise<void> {
     logger.info('Workspace weekly report generated and stored', {
       workspaceId,
       insightsCount: reportData.insights.length,
+    });
+
+    // Send notification for the weekly report
+    await sendWeeklyReportNotification({
+      workspaceId,
+      workspaceName: workspaceData.name,
+      reportId: `report_${Date.now()}_${workspaceId}`,
+      periodStart: reportData.periodStart,
+      periodEnd: reportData.periodEnd,
+      summary: reportData.summary,
+      metrics: reportData.metrics,
+      verticalType,
     });
   } catch (error) {
     logger.error('Failed to generate workspace report', error as Error, { workspaceId });

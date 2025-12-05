@@ -264,6 +264,19 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/notifications:
+    dependencies:
+      '@aibos/core':
+        specifier: workspace:*
+        version: link:../core
+      '@aibos/data-model':
+        specifier: workspace:*
+        version: link:../data-model
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/vertical-packs:
     dependencies:
       '@aibos/core':

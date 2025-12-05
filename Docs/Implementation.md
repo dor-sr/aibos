@@ -186,8 +186,8 @@ This document outlines the implementation plan for V1 of the AI Business OS plat
 
 #### 6.3 Notification Hooks
 - [x] Design notification schema
-- [ ] Scaffold email notification
-- [ ] Scaffold Slack notification (later)
+- [x] Scaffold email notification
+- [x] Scaffold Slack notification
 
 ---
 
@@ -256,12 +256,26 @@ All stages (1-7) are now complete. The platform includes:
 - Marketing and Commerce Ops agent scaffolds
 - Vertical packs for ecommerce and SaaS
 
+### Stage 8: Notifications Package
+**Status**: Completed
+
+#### 8.1 Notification Infrastructure
+- [x] Create notifications schema (notification_settings, notification_logs)
+- [x] Create `/packages/notifications` package
+- [x] Implement email notification scaffold with templates
+- [x] Implement Slack notification scaffold with Block Kit
+- [x] Create notification service for orchestration
+- [x] Add notification hooks to worker jobs
+
+---
+
 Next steps for V2:
 1. Add more connectors (Stripe, GA4, Tiendanube)
-2. Implement email/Slack notifications
-3. Expand Marketing and Commerce Ops agents
-4. Add real-time webhooks for data sync
-5. Multi-workspace support per user
+2. Integrate actual email provider (Resend/SendGrid/SES)
+3. Integrate actual Slack API (Bot Token or Webhooks)
+4. Expand Marketing and Commerce Ops agents
+5. Add real-time webhooks for data sync
+6. Multi-workspace support per user
 
 ---
 

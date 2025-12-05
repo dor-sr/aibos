@@ -2,6 +2,7 @@ import { createLogger } from '@aibos/core';
 import { db, workspaces, anomalies as anomaliesTable } from '@aibos/data-model';
 import { eq } from 'drizzle-orm';
 import { detectAnomalies as detectWorkspaceAnomalies } from '@aibos/analytics-agent';
+import { sendAnomalyAlertNotification } from '../lib/notifications';
 import type { VerticalType } from '@aibos/core';
 import type { JobContext } from './index';
 
@@ -81,6 +82,24 @@ async function detectForWorkspace(workspaceId: string): Promise<void> {
       anomalyCount: detected.length,
       severities: detected.map((a) => a.severity),
     });
+
+    // Send notifications for high/critical severity anomalies
+    for (const anomaly of detected) {
+      if (anomaly.severity === 'high' || anomaly.severity === 'critical') {
+        await sendAnomalyAlertNotification({
+          workspaceId,
+          workspaceName: workspaceData.name,
+          anomalyId: anomaly.id,
+          metricName: anomaly.metricName,
+          severity: anomaly.severity,
+          title: anomaly.title,
+          description: anomaly.description,
+          currentValue: String(anomaly.currentValue),
+          previousValue: String(anomaly.previousValue),
+          changePercent: anomaly.changePercent,
+        });
+      }
+    }
   } catch (error) {
     logger.error('Failed to detect anomalies for workspace', error as Error, { workspaceId });
     throw error;

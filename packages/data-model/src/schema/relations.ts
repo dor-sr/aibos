@@ -5,6 +5,7 @@ import { connectors, syncLogs } from './connectors';
 import { ecommerceCustomers, ecommerceProducts, ecommerceOrders, ecommerceOrderItems } from './ecommerce';
 import { saasPlans, saasCustomers, saasSubscriptions, saasInvoices } from './saas';
 import { reports, anomalies, questionHistory } from './reports';
+import { notificationSettings, notificationLogs } from './notifications';
 
 // Workspace relations
 export const workspacesRelations = relations(workspaces, ({ many }) => ({
@@ -20,6 +21,8 @@ export const workspacesRelations = relations(workspaces, ({ many }) => ({
   reports: many(reports),
   anomalies: many(anomalies),
   questionHistory: many(questionHistory),
+  notificationSettings: many(notificationSettings),
+  notificationLogs: many(notificationLogs),
 }));
 
 // User relations
@@ -177,5 +180,23 @@ export const questionHistoryRelations = relations(questionHistory, ({ one }) => 
   }),
 }));
 
+// Notification relations
+export const notificationSettingsRelations = relations(notificationSettings, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [notificationSettings.workspaceId],
+    references: [workspaces.id],
+  }),
+  logs: many(notificationLogs),
+}));
 
+export const notificationLogsRelations = relations(notificationLogs, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [notificationLogs.workspaceId],
+    references: [workspaces.id],
+  }),
+  settings: one(notificationSettings, {
+    fields: [notificationLogs.settingsId],
+    references: [notificationSettings.id],
+  }),
+}));
 

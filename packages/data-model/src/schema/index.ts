@@ -5,6 +5,7 @@ export * from './connectors';
 export * from './ecommerce';
 export * from './saas';
 export * from './reports';
+export * from './notifications';
 export * from './relations';
 
 
