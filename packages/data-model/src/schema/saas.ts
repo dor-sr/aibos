@@ -163,3 +163,4 @@ export type SaasInvoice = typeof saasInvoices.$inferSelect;
 export type NewSaasInvoice = typeof saasInvoices.$inferInsert;
 
 
+

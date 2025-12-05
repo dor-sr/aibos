@@ -25,3 +25,4 @@ export async function getFirstWorkspace(userId: string) {
   return membership?.workspace || null;
 }
 
+
