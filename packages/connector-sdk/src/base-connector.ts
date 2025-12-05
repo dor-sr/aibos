@@ -1,25 +1,50 @@
-// Base Connector Class
-// Extend this class to create custom connectors
+/**
+ * Base Connector Class
+ * 
+ * Abstract base class that all custom connectors should extend.
+ * Provides common functionality for authentication, data fetching, and syncing.
+ */
 
-import {
+import type {
   ConnectorDefinition,
-  ConnectorContext,
+  ConnectorState,
+  ConnectionStatus,
   SyncResult,
-  WebhookResult,
-  EntityDefinition,
-  SyncError,
+  EntityType,
+  NormalizedCustomer,
+  NormalizedOrder,
+  NormalizedProduct,
+  NormalizedSubscription,
+  NormalizedInvoice,
+  WebhookEvent,
 } from './types';
 
-/**
- * Base class for all connectors.
- * Extend this class and implement the required methods.
- */
+export type NormalizedEntity = 
+  | NormalizedCustomer
+  | NormalizedOrder
+  | NormalizedProduct
+  | NormalizedSubscription
+  | NormalizedInvoice;
+
+export interface FetchOptions {
+  cursor?: string;
+  limit?: number;
+  since?: Date;
+}
+
+export interface FetchResult<T> {
+  data: T[];
+  nextCursor?: string;
+  hasMore: boolean;
+}
+
 export abstract class BaseConnector {
   protected definition: ConnectorDefinition;
-  protected context: ConnectorContext | null = null;
-
-  constructor(definition: ConnectorDefinition) {
+  protected state: ConnectorState;
+  
+  constructor(definition: ConnectorDefinition, state: ConnectorState) {
     this.definition = definition;
+    this.state = state;
   }
 
   /**
@@ -30,332 +55,253 @@ export abstract class BaseConnector {
   }
 
   /**
-   * Get connector definition
+   * Get supported entity types
    */
-  getDefinition() {
-    return this.definition;
+  getSupportedEntities(): EntityType[] {
+    return this.definition.sync.entities
+      .filter(e => e.enabled)
+      .map(e => e.type);
   }
 
   /**
-   * Initialize the connector with context
+   * Test the connection to the external service
    */
-  initialize(context: ConnectorContext): void {
-    this.context = context;
-  }
+  abstract testConnection(): Promise<ConnectionStatus>;
 
   /**
-   * Validate credentials
-   * @returns true if credentials are valid
+   * Authenticate with the external service
+   * Returns updated credentials (e.g., refreshed tokens)
    */
-  abstract validateCredentials(): Promise<boolean>;
+  abstract authenticate(): Promise<Record<string, unknown>>;
 
   /**
-   * Test connection to the data source
-   * @returns Connection test result
+   * Refresh authentication (for OAuth2 token refresh)
    */
-  abstract testConnection(): Promise<{
-    success: boolean;
-    message?: string;
-    details?: Record<string, unknown>;
-  }>;
+  abstract refreshAuth(): Promise<Record<string, unknown>>;
 
   /**
-   * Sync a specific entity
-   * @param entity Entity definition to sync
-   * @param options Sync options (incremental, cursor, etc.)
+   * Fetch customers from the external service
    */
-  abstract syncEntity(
-    entity: EntityDefinition,
-    options?: {
-      incremental?: boolean;
-      cursor?: string;
-      since?: Date;
-      pageSize?: number;
-    }
-  ): Promise<SyncResult>;
+  abstract fetchCustomers(options?: FetchOptions): Promise<FetchResult<NormalizedCustomer>>;
 
   /**
-   * Sync all entities
-   * @param options Sync options
+   * Fetch orders from the external service
    */
-  async syncAll(options?: {
-    incremental?: boolean;
-    since?: Date;
-  }): Promise<SyncResult[]> {
-    const results: SyncResult[] = [];
-
-    for (const entity of this.definition.entities) {
-      try {
-        const result = await this.syncEntity(entity, options);
-        results.push(result);
-      } catch (error) {
-        results.push({
-          success: false,
-          entity: entity.name,
-          recordsProcessed: 0,
-          recordsCreated: 0,
-          recordsUpdated: 0,
-          recordsDeleted: 0,
-          errors: [
-            {
-              message: error instanceof Error ? error.message : 'Unknown error',
-              code: 'SYNC_ERROR',
-            },
-          ],
-          hasMore: false,
-        });
-      }
-    }
-
-    return results;
-  }
+  abstract fetchOrders(options?: FetchOptions): Promise<FetchResult<NormalizedOrder>>;
 
   /**
-   * Process incoming webhook
-   * @param event Event type from provider
-   * @param payload Webhook payload
-   * @param headers Request headers
+   * Fetch products from the external service
    */
-  async processWebhook(
-    event: string,
-    payload: unknown,
-    headers: Record<string, string>
-  ): Promise<WebhookResult> {
-    // Find matching webhook definition
-    const webhookDef = this.definition.webhooks?.find(
-      (w) => w.providerEvent === event
-    );
-
-    if (!webhookDef) {
-      return {
-        processed: false,
-        event,
-        error: `Unknown webhook event: ${event}`,
-      };
-    }
-
-    // Verify signature if configured
-    if (webhookDef.signature) {
-      const isValid = await this.verifyWebhookSignature(
-        payload,
-        headers,
-        webhookDef.signature
-      );
-
-      if (!isValid) {
-        return {
-          processed: false,
-          event,
-          error: 'Invalid webhook signature',
-        };
-      }
-    }
-
-    // Process the webhook
-    return this.handleWebhookEvent(webhookDef.internalEvent, payload);
-  }
+  abstract fetchProducts(options?: FetchOptions): Promise<FetchResult<NormalizedProduct>>;
 
   /**
-   * Handle a specific webhook event
-   * Override this method to implement custom webhook handling
+   * Fetch subscriptions from the external service (SaaS connectors)
    */
-  protected async handleWebhookEvent(
-    internalEvent: string,
-    payload: unknown
-  ): Promise<WebhookResult> {
-    // Default implementation - override in subclass
-    return {
-      processed: true,
-      event: internalEvent,
-    };
-  }
+  abstract fetchSubscriptions(options?: FetchOptions): Promise<FetchResult<NormalizedSubscription>>;
+
+  /**
+   * Fetch invoices from the external service (SaaS connectors)
+   */
+  abstract fetchInvoices(options?: FetchOptions): Promise<FetchResult<NormalizedInvoice>>;
+
+  /**
+   * Process a webhook event
+   */
+  abstract processWebhook(event: WebhookEvent): Promise<NormalizedEntity | null>;
 
   /**
    * Verify webhook signature
    */
-  protected async verifyWebhookSignature(
-    payload: unknown,
-    headers: Record<string, string>,
-    config: NonNullable<
-      ConnectorDefinition['webhooks']
-    >[number]['signature']
-  ): Promise<boolean> {
-    if (!config) return true;
+  abstract verifyWebhook(payload: string, signature: string): boolean;
 
-    // Get signature from header
-    const signature = headers[config.header.toLowerCase()];
-    if (!signature) return false;
+  /**
+   * Perform a full sync for an entity type
+   */
+  async fullSync(entityType: EntityType): Promise<SyncResult> {
+    const startTime = Date.now();
+    const errors: SyncResult['errors'] = [];
+    let recordsProcessed = 0;
+    let recordsCreated = 0;
+    let recordsUpdated = 0;
+    let cursor: string | undefined;
 
-    // Get secret from config
-    const secret = this.context?.config[config.secret] as string;
-    if (!secret) return false;
+    try {
+      const fetchMethod = this.getFetchMethod(entityType);
+      let hasMore = true;
 
-    // Compute expected signature
-    const crypto = await import('crypto');
-    const payloadString =
-      typeof payload === 'string' ? payload : JSON.stringify(payload);
-    const expected = crypto
-      .createHmac(config.algorithm, secret)
-      .update(payloadString)
-      .digest('hex');
+      while (hasMore) {
+        const result = await fetchMethod({ cursor, limit: 100 });
+        
+        recordsProcessed += result.data.length;
+        recordsCreated += result.data.length; // In a real impl, check for updates
 
-    // Compare (timing-safe)
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expected)
-    );
+        cursor = result.nextCursor;
+        hasMore = result.hasMore;
+      }
+
+      return {
+        success: true,
+        entityType,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors,
+        durationMs: Date.now() - startTime,
+        cursor,
+      };
+    } catch (error) {
+      errors.push({
+        message: error instanceof Error ? error.message : 'Unknown error',
+        retryable: true,
+      });
+
+      return {
+        success: false,
+        entityType,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors,
+        durationMs: Date.now() - startTime,
+      };
+    }
   }
 
   /**
-   * Make an API request to the data source
+   * Perform an incremental sync for an entity type
+   */
+  async incrementalSync(entityType: EntityType, since?: Date): Promise<SyncResult> {
+    const startTime = Date.now();
+    const errors: SyncResult['errors'] = [];
+    let recordsProcessed = 0;
+    let recordsCreated = 0;
+    let recordsUpdated = 0;
+    let cursor = this.state.lastSyncCursors[entityType];
+
+    try {
+      const fetchMethod = this.getFetchMethod(entityType);
+      let hasMore = true;
+
+      while (hasMore) {
+        const result = await fetchMethod({ cursor, limit: 100, since });
+        
+        recordsProcessed += result.data.length;
+        recordsUpdated += result.data.length;
+
+        cursor = result.nextCursor;
+        hasMore = result.hasMore;
+      }
+
+      return {
+        success: true,
+        entityType,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors,
+        durationMs: Date.now() - startTime,
+        cursor,
+      };
+    } catch (error) {
+      errors.push({
+        message: error instanceof Error ? error.message : 'Unknown error',
+        retryable: true,
+      });
+
+      return {
+        success: false,
+        entityType,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors,
+        durationMs: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * Get the appropriate fetch method for an entity type
+   */
+  private getFetchMethod(entityType: EntityType) {
+    switch (entityType) {
+      case 'customer':
+        return this.fetchCustomers.bind(this);
+      case 'order':
+        return this.fetchOrders.bind(this);
+      case 'product':
+        return this.fetchProducts.bind(this);
+      case 'subscription':
+        return this.fetchSubscriptions.bind(this);
+      case 'invoice':
+        return this.fetchInvoices.bind(this);
+      default:
+        throw new Error(`Unsupported entity type: ${entityType}`);
+    }
+  }
+
+  /**
+   * Make an authenticated API request
    */
   protected async makeRequest<T>(
-    endpointName: string,
-    params?: Record<string, unknown>
+    url: string,
+    options: RequestInit = {}
   ): Promise<T> {
-    const endpoint = this.definition.endpoints.find(
-      (e) => e.name === endpointName
-    );
-
-    if (!endpoint) {
-      throw new Error(`Unknown endpoint: ${endpointName}`);
+    const headers = new Headers(options.headers);
+    
+    // Add authentication
+    const authHeader = this.getAuthHeader();
+    if (authHeader) {
+      headers.set('Authorization', authHeader);
     }
 
-    // Build URL
-    let url = this.buildUrl(endpoint.path, params);
-
-    // Add query params
-    if (endpoint.queryParams || params) {
-      const searchParams = new URLSearchParams();
-      if (endpoint.queryParams) {
-        Object.entries(endpoint.queryParams).forEach(([key, value]) => {
-          searchParams.append(key, value);
-        });
-      }
-      if (params) {
-        Object.entries(params).forEach(([key, value]) => {
-          if (value !== undefined && typeof value !== 'object') {
-            searchParams.append(key, String(value));
-          }
-        });
-      }
-      const queryString = searchParams.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
-    }
-
-    // Build headers
-    const headers = await this.buildHeaders();
-
-    // Make request
     const response = await fetch(url, {
-      method: endpoint.method,
+      ...options,
       headers,
-      body:
-        endpoint.method !== 'GET' && params
-          ? JSON.stringify(params)
-          : undefined,
     });
 
     if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
+      if (response.status === 401) {
+        // Try to refresh auth
+        await this.refreshAuth();
+        // Retry request
+        return this.makeRequest(url, options);
+      }
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   /**
-   * Build URL with path parameters
+   * Get the authorization header based on auth config
    */
-  protected buildUrl(
-    path: string,
-    params?: Record<string, unknown>
-  ): string {
-    let url = path;
-
-    if (params) {
-      // Replace path parameters
-      Object.entries(params).forEach(([key, value]) => {
-        url = url.replace(`{${key}}`, String(value));
-      });
-    }
-
-    return url;
-  }
-
-  /**
-   * Build request headers with authentication
-   */
-  protected async buildHeaders(): Promise<Record<string, string>> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    const auth = this.definition.auth;
-    const credentials = this.context?.credentials || {};
+  protected getAuthHeader(): string | null {
+    const { auth } = this.definition;
+    const credentials = this.state.credentials;
 
     switch (auth.type) {
-      case 'api_key':
-        if (auth.apiKey?.headerName) {
-          const prefix = auth.apiKey.prefix || '';
-          headers[auth.apiKey.headerName] =
-            prefix + (credentials.api_key || '');
-        }
-        break;
-
-      case 'bearer':
-        headers['Authorization'] =
-          `Bearer ${credentials.access_token || credentials.api_key || ''}`;
-        break;
-
-      case 'basic':
-        const username = credentials.username || '';
-        const password = credentials.password || '';
-        const encoded = Buffer.from(`${username}:${password}`).toString(
-          'base64'
-        );
-        headers['Authorization'] = `Basic ${encoded}`;
-        break;
-
-      case 'oauth2':
-        headers['Authorization'] =
-          `Bearer ${credentials.access_token || ''}`;
-        break;
+      case 'api_key': {
+        const prefix = auth.apiKey?.prefix || 'Bearer';
+        const key = credentials.apiKey as string;
+        return `${prefix} ${key}`;
+      }
+      case 'oauth2': {
+        const accessToken = credentials.accessToken as string;
+        return `Bearer ${accessToken}`;
+      }
+      case 'basic': {
+        const username = credentials.username as string;
+        const password = credentials.password as string;
+        const encoded = Buffer.from(`${username}:${password}`).toString('base64');
+        return `Basic ${encoded}`;
+      }
+      default:
+        return null;
     }
-
-    return headers;
-  }
-
-  /**
-   * Log a message using the connector logger
-   */
-  protected log(
-    level: 'debug' | 'info' | 'warn' | 'error',
-    message: string,
-    meta?: Record<string, unknown>
-  ): void {
-    if (this.context?.logger) {
-      this.context.logger[level](message, meta);
-    } else {
-      console[level](
-        `[${this.definition.metadata.name}] ${message}`,
-        meta || ''
-      );
-    }
-  }
-
-  /**
-   * Create a sync error object
-   */
-  protected createError(
-    message: string,
-    code: string,
-    recordId?: string,
-    field?: string
-  ): SyncError {
-    return { message, code, recordId, field };
   }
 }

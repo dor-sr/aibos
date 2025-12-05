@@ -1,295 +1,311 @@
-// Testing utilities for connectors
+/**
+ * Testing utilities for connector development
+ */
 
-import {
+import type {
   ConnectorDefinition,
-  ConnectorContext,
-  ConnectorLogger,
+  ConnectorState,
   SyncResult,
-  EntityDefinition,
+  EntityType,
+  NormalizedCustomer,
+  NormalizedOrder,
+  NormalizedProduct,
 } from './types';
-import { BaseConnector } from './base-connector';
-import { validateConnectorDefinition } from './validators';
+import { BaseConnector, FetchResult } from './base-connector';
+import { validateConnectorDefinition, validateConfig } from './validation';
 
 /**
- * Mock logger for testing
+ * Test suite result
  */
-export function createMockLogger(): ConnectorLogger {
-  const logs: Array<{
-    level: string;
-    message: string;
-    meta?: Record<string, unknown>;
-  }> = [];
-
-  return {
-    debug(message: string, meta?: Record<string, unknown>) {
-      logs.push({ level: 'debug', message, meta });
-    },
-    info(message: string, meta?: Record<string, unknown>) {
-      logs.push({ level: 'info', message, meta });
-    },
-    warn(message: string, meta?: Record<string, unknown>) {
-      logs.push({ level: 'warn', message, meta });
-    },
-    error(message: string, meta?: Record<string, unknown>) {
-      logs.push({ level: 'error', message, meta });
-    },
-    getLogs: () => logs,
-    clearLogs: () => {
-      logs.length = 0;
-    },
-  } as ConnectorLogger & {
-    getLogs: () => typeof logs;
-    clearLogs: () => void;
-  };
+export interface TestSuiteResult {
+  name: string;
+  passed: boolean;
+  tests: TestResult[];
+  duration: number;
 }
 
-/**
- * Create a mock context for testing
- */
-export function createMockContext(
-  options?: Partial<ConnectorContext>
-): ConnectorContext {
-  return {
-    workspaceId: 'test-workspace-id',
-    connectorId: 'test-connector-id',
-    credentials: {},
-    config: {},
-    logger: createMockLogger(),
-    ...options,
-  };
-}
-
-/**
- * Test suite for connectors
- */
-export class ConnectorTestSuite {
-  private connector: BaseConnector;
-  private context: ConnectorContext;
-
-  constructor(
-    connector: BaseConnector,
-    context?: Partial<ConnectorContext>
-  ) {
-    this.connector = connector;
-    this.context = createMockContext(context);
-    this.connector.initialize(this.context);
-  }
-
-  /**
-   * Run all tests
-   */
-  async runAll(): Promise<TestResults> {
-    const results: TestResults = {
-      passed: 0,
-      failed: 0,
-      tests: [],
-    };
-
-    // Definition validation
-    await this.runTest(
-      results,
-      'Definition Validation',
-      () => this.testDefinitionValidation()
-    );
-
-    // Credential validation
-    await this.runTest(
-      results,
-      'Credential Validation',
-      () => this.testCredentialValidation()
-    );
-
-    // Connection test
-    await this.runTest(
-      results,
-      'Connection Test',
-      () => this.testConnection()
-    );
-
-    // Entity sync tests
-    const entities = this.connector.getDefinition().entities;
-    for (const entity of entities) {
-      await this.runTest(
-        results,
-        `Sync Entity: ${entity.name}`,
-        () => this.testEntitySync(entity)
-      );
-    }
-
-    return results;
-  }
-
-  /**
-   * Run a single test
-   */
-  private async runTest(
-    results: TestResults,
-    name: string,
-    testFn: () => Promise<TestResult>
-  ): Promise<void> {
-    try {
-      const result = await testFn();
-      results.tests.push({ name, ...result });
-
-      if (result.passed) {
-        results.passed++;
-      } else {
-        results.failed++;
-      }
-    } catch (error) {
-      results.failed++;
-      results.tests.push({
-        name,
-        passed: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  /**
-   * Test definition validation
-   */
-  private async testDefinitionValidation(): Promise<TestResult> {
-    const definition = this.connector.getDefinition();
-    const validation = validateConnectorDefinition(definition);
-
-    return {
-      passed: validation.valid,
-      error: validation.errors.length > 0
-        ? validation.errors.join(', ')
-        : undefined,
-    };
-  }
-
-  /**
-   * Test credential validation
-   */
-  private async testCredentialValidation(): Promise<TestResult> {
-    try {
-      const isValid = await this.connector.validateCredentials();
-      return {
-        passed: isValid,
-        error: isValid ? undefined : 'Credentials validation failed',
-      };
-    } catch (error) {
-      return {
-        passed: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  }
-
-  /**
-   * Test connection
-   */
-  private async testConnection(): Promise<TestResult> {
-    try {
-      const result = await this.connector.testConnection();
-      return {
-        passed: result.success,
-        error: result.message,
-        details: result.details,
-      };
-    } catch (error) {
-      return {
-        passed: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  }
-
-  /**
-   * Test entity sync
-   */
-  private async testEntitySync(
-    entity: EntityDefinition
-  ): Promise<TestResult> {
-    try {
-      const result = await this.connector.syncEntity(entity, {
-        pageSize: 10,
-      });
-
-      const passed =
-        result.success &&
-        result.errors.length === 0 &&
-        result.recordsProcessed >= 0;
-
-      return {
-        passed,
-        error: result.errors.length > 0
-          ? result.errors.map((e) => e.message).join(', ')
-          : undefined,
-        details: {
-          recordsProcessed: result.recordsProcessed,
-          recordsCreated: result.recordsCreated,
-          recordsUpdated: result.recordsUpdated,
-          hasMore: result.hasMore,
-        },
-      };
-    } catch (error) {
-      return {
-        passed: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  }
-}
-
-interface TestResult {
+export interface TestResult {
+  name: string;
   passed: boolean;
   error?: string;
-  details?: Record<string, unknown>;
-}
-
-interface TestResults {
-  passed: number;
-  failed: number;
-  tests: Array<{ name: string } & TestResult>;
+  duration: number;
 }
 
 /**
- * Create a mock response for API testing
+ * Run a complete test suite for a connector
  */
-export function createMockResponse<T>(
-  data: T,
-  options?: {
-    status?: number;
-    headers?: Record<string, string>;
-    delay?: number;
+export async function runConnectorTests(
+  connector: BaseConnector,
+  definition: ConnectorDefinition
+): Promise<TestSuiteResult> {
+  const startTime = Date.now();
+  const tests: TestResult[] = [];
+
+  // Test 1: Definition validation
+  tests.push(await runTest('Definition validation', async () => {
+    const result = validateConnectorDefinition(definition);
+    if (!result.valid) {
+      throw new Error(result.error);
+    }
+  }));
+
+  // Test 2: Connection test
+  tests.push(await runTest('Connection test', async () => {
+    const status = await connector.testConnection();
+    if (!status.connected) {
+      throw new Error(status.error || 'Connection failed');
+    }
+  }));
+
+  // Test 3: Fetch customers
+  if (definition.sync.entities.some(e => e.type === 'customer' && e.enabled)) {
+    tests.push(await runTest('Fetch customers', async () => {
+      const result = await connector.fetchCustomers({ limit: 10 });
+      validateFetchResult(result, 'customer');
+    }));
   }
-): Promise<Response> {
-  const { status = 200, headers = {}, delay = 0 } = options || {};
 
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(
-        new Response(JSON.stringify(data), {
-          status,
-          headers: {
-            'Content-Type': 'application/json',
-            ...headers,
-          },
-        })
-      );
-    }, delay);
-  });
+  // Test 4: Fetch orders
+  if (definition.sync.entities.some(e => e.type === 'order' && e.enabled)) {
+    tests.push(await runTest('Fetch orders', async () => {
+      const result = await connector.fetchOrders({ limit: 10 });
+      validateFetchResult(result, 'order');
+    }));
+  }
+
+  // Test 5: Fetch products
+  if (definition.sync.entities.some(e => e.type === 'product' && e.enabled)) {
+    tests.push(await runTest('Fetch products', async () => {
+      const result = await connector.fetchProducts({ limit: 10 });
+      validateFetchResult(result, 'product');
+    }));
+  }
+
+  // Test 6: Full sync simulation
+  const firstEntity = definition.sync.entities.find(e => e.enabled);
+  if (firstEntity) {
+    tests.push(await runTest(`Full sync (${firstEntity.type})`, async () => {
+      const result = await connector.fullSync(firstEntity.type);
+      validateSyncResult(result);
+    }));
+  }
+
+  const allPassed = tests.every(t => t.passed);
+
+  return {
+    name: definition.metadata.name,
+    passed: allPassed,
+    tests,
+    duration: Date.now() - startTime,
+  };
 }
 
 /**
- * Create a mock fetch function for testing
+ * Run a single test
  */
-export function createMockFetch(
-  responses: Record<string, unknown>
-): typeof fetch {
-  return async (input: RequestInfo | URL): Promise<Response> => {
-    const url = typeof input === 'string' ? input : input.toString();
+async function runTest(
+  name: string,
+  fn: () => Promise<void>
+): Promise<TestResult> {
+  const startTime = Date.now();
 
-    for (const [pattern, response] of Object.entries(responses)) {
-      if (url.includes(pattern)) {
-        return createMockResponse(response);
-      }
+  try {
+    await fn();
+    return {
+      name,
+      passed: true,
+      duration: Date.now() - startTime,
+    };
+  } catch (error) {
+    return {
+      name,
+      passed: false,
+      error: error instanceof Error ? error.message : String(error),
+      duration: Date.now() - startTime,
+    };
+  }
+}
+
+/**
+ * Validate fetch result structure
+ */
+function validateFetchResult(
+  result: FetchResult<unknown>,
+  entityType: EntityType
+): void {
+  if (!Array.isArray(result.data)) {
+    throw new Error('data must be an array');
+  }
+
+  if (typeof result.hasMore !== 'boolean') {
+    throw new Error('hasMore must be a boolean');
+  }
+
+  // Validate first item if exists
+  if (result.data.length > 0) {
+    const item = result.data[0] as Record<string, unknown>;
+    
+    if (!item.externalId) {
+      throw new Error('Items must have externalId');
     }
 
-    return createMockResponse({ error: 'Not found' }, { status: 404 });
+    // Entity-specific validation
+    switch (entityType) {
+      case 'customer':
+        validateCustomer(item);
+        break;
+      case 'order':
+        validateOrder(item);
+        break;
+      case 'product':
+        validateProduct(item);
+        break;
+    }
+  }
+}
+
+/**
+ * Validate customer structure
+ */
+function validateCustomer(customer: Record<string, unknown>): void {
+  if (!(customer.createdAt instanceof Date)) {
+    throw new Error('Customer must have createdAt as Date');
+  }
+}
+
+/**
+ * Validate order structure
+ */
+function validateOrder(order: Record<string, unknown>): void {
+  if (typeof order.totalPrice !== 'number') {
+    throw new Error('Order must have totalPrice as number');
+  }
+  if (typeof order.currency !== 'string') {
+    throw new Error('Order must have currency as string');
+  }
+  if (!Array.isArray(order.lineItems)) {
+    throw new Error('Order must have lineItems as array');
+  }
+}
+
+/**
+ * Validate product structure
+ */
+function validateProduct(product: Record<string, unknown>): void {
+  if (typeof product.name !== 'string') {
+    throw new Error('Product must have name as string');
+  }
+  if (!Array.isArray(product.variants)) {
+    throw new Error('Product must have variants as array');
+  }
+}
+
+/**
+ * Validate sync result structure
+ */
+function validateSyncResult(result: SyncResult): void {
+  if (typeof result.success !== 'boolean') {
+    throw new Error('SyncResult must have success as boolean');
+  }
+  if (typeof result.recordsProcessed !== 'number') {
+    throw new Error('SyncResult must have recordsProcessed as number');
+  }
+  if (!Array.isArray(result.errors)) {
+    throw new Error('SyncResult must have errors as array');
+  }
+}
+
+/**
+ * Create mock customer data for testing
+ */
+export function createMockCustomer(
+  overrides?: Partial<NormalizedCustomer>
+): NormalizedCustomer {
+  return {
+    externalId: `cust_${Date.now()}`,
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'Customer',
+    createdAt: new Date(),
+    ...overrides,
+  };
+}
+
+/**
+ * Create mock order data for testing
+ */
+export function createMockOrder(
+  overrides?: Partial<NormalizedOrder>
+): NormalizedOrder {
+  return {
+    externalId: `ord_${Date.now()}`,
+    status: 'completed',
+    financialStatus: 'paid',
+    currency: 'USD',
+    totalPrice: 9999,
+    subtotalPrice: 8999,
+    totalTax: 800,
+    totalDiscount: 0,
+    lineItems: [
+      {
+        externalId: `li_${Date.now()}`,
+        name: 'Test Product',
+        quantity: 1,
+        price: 8999,
+        totalDiscount: 0,
+      },
+    ],
+    createdAt: new Date(),
+    ...overrides,
+  };
+}
+
+/**
+ * Create mock product data for testing
+ */
+export function createMockProduct(
+  overrides?: Partial<NormalizedProduct>
+): NormalizedProduct {
+  return {
+    externalId: `prod_${Date.now()}`,
+    name: 'Test Product',
+    description: 'A test product',
+    status: 'active',
+    variants: [
+      {
+        externalId: `var_${Date.now()}`,
+        sku: 'TEST-001',
+        price: 2999,
+        inventoryQuantity: 100,
+      },
+    ],
+    createdAt: new Date(),
+    ...overrides,
+  };
+}
+
+/**
+ * Create mock connector state for testing
+ */
+export function createMockConnectorState(
+  workspaceId: string = 'test-workspace',
+  connectorId: string = 'test-connector'
+): ConnectorState {
+  return {
+    workspaceId,
+    connectorId,
+    credentials: {},
+    config: {},
+    lastSyncCursors: {
+      customer: undefined,
+      order: undefined,
+      product: undefined,
+      subscription: undefined,
+      invoice: undefined,
+      transaction: undefined,
+      campaign: undefined,
+      event: undefined,
+      custom: undefined,
+    },
   };
 }

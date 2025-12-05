@@ -1,56 +1,23 @@
-// Connector SDK Type Definitions
-import { z } from 'zod';
-
-// Connector metadata
-export interface ConnectorMetadata {
-  /** Unique identifier for the connector */
-  id: string;
-  /** Human-readable name */
-  name: string;
-  /** URL-friendly slug */
-  slug: string;
-  /** Connector description */
-  description: string;
-  /** Version following semver */
-  version: string;
-  /** Category: ecommerce, saas, marketing, crm, analytics, etc. */
-  category: ConnectorCategory;
-  /** Icon URL */
-  iconUrl?: string;
-  /** Brand color (hex) */
-  brandColor?: string;
-  /** Documentation URL */
-  documentationUrl?: string;
-  /** Support URL or email */
-  supportUrl?: string;
-}
-
-export type ConnectorCategory =
-  | 'ecommerce'
-  | 'saas'
-  | 'marketing'
-  | 'crm'
-  | 'analytics'
-  | 'payment'
-  | 'inventory'
-  | 'shipping'
-  | 'custom';
+/**
+ * Core types for the Connector SDK
+ */
 
 // Authentication types
-export type AuthType = 'oauth2' | 'api_key' | 'basic' | 'bearer' | 'custom';
+export type AuthType = 'oauth2' | 'api_key' | 'basic' | 'custom';
 
 export interface OAuth2Config {
   authorizationUrl: string;
   tokenUrl: string;
+  clientId: string;
+  clientSecret: string;
   scopes: string[];
-  clientIdEnvVar?: string;
-  clientSecretEnvVar?: string;
+  redirectUri?: string;
 }
 
 export interface ApiKeyConfig {
-  headerName?: string; // Default: 'X-API-Key'
-  queryParam?: string; // Alternative to header
-  prefix?: string;     // e.g., 'Bearer '
+  headerName?: string;  // Default: 'Authorization'
+  prefix?: string;      // Default: 'Bearer'
+  location?: 'header' | 'query';
 }
 
 export interface BasicAuthConfig {
@@ -62,209 +29,265 @@ export interface AuthConfig {
   type: AuthType;
   oauth2?: OAuth2Config;
   apiKey?: ApiKeyConfig;
-  basicAuth?: BasicAuthConfig;
-  customFields?: AuthFieldDefinition[];
+  basic?: BasicAuthConfig;
+  custom?: Record<string, unknown>;
 }
 
-export interface AuthFieldDefinition {
+// Connector metadata
+export interface ConnectorMetadata {
+  id: string;
   name: string;
-  label: string;
-  type: 'text' | 'password' | 'url' | 'select';
-  required: boolean;
-  placeholder?: string;
-  helpText?: string;
-  options?: { value: string; label: string }[];
-  validation?: {
-    pattern?: string;
-    minLength?: number;
-    maxLength?: number;
-  };
+  slug: string;
+  description: string;
+  version: string;
+  category: ConnectorCategory;
+  icon?: string;
+  brandColor?: string;
+  documentationUrl?: string;
+  supportUrl?: string;
 }
 
-// Configuration schema
-export interface ConfigFieldDefinition {
-  name: string;
-  label: string;
-  type: 'text' | 'number' | 'boolean' | 'select' | 'multiselect' | 'url';
-  required: boolean;
-  default?: unknown;
-  placeholder?: string;
-  helpText?: string;
-  options?: { value: string; label: string }[];
-}
+export type ConnectorCategory = 
+  | 'ecommerce'
+  | 'payments'
+  | 'analytics'
+  | 'marketing'
+  | 'crm'
+  | 'erp'
+  | 'inventory'
+  | 'shipping'
+  | 'communication'
+  | 'custom';
+
+// Data entity types
+export type EntityType = 
+  | 'customer'
+  | 'order'
+  | 'product'
+  | 'subscription'
+  | 'invoice'
+  | 'transaction'
+  | 'campaign'
+  | 'event'
+  | 'custom';
 
 // Sync configuration
 export interface SyncConfig {
-  /** Default sync frequency in minutes */
-  defaultFrequency: number;
-  /** Minimum allowed sync frequency */
-  minFrequency: number;
-  /** Supports incremental sync */
-  supportsIncremental: boolean;
-  /** Supports webhooks for real-time updates */
-  supportsWebhooks: boolean;
+  entities: EntitySyncConfig[];
+  defaultFrequency: SyncFrequency;
+  supportedOperations: SyncOperation[];
 }
 
-// Data entity definitions
-export interface EntityDefinition {
-  /** Entity name (e.g., 'orders', 'customers') */
-  name: string;
-  /** Human-readable label */
-  label: string;
-  /** Description of the entity */
-  description?: string;
-  /** Target table in normalized schema */
-  targetTable: string;
-  /** Supports incremental sync */
-  supportsIncremental: boolean;
-  /** Primary key field(s) */
-  primaryKey: string | string[];
-  /** Field that indicates last update time */
-  updatedAtField?: string;
+export interface EntitySyncConfig {
+  type: EntityType;
+  enabled: boolean;
+  frequency?: SyncFrequency;
+  customEndpoint?: string;
 }
 
-// API endpoint definitions
-export interface EndpointDefinition {
-  /** Endpoint name */
-  name: string;
-  /** HTTP method */
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  /** URL path (supports {param} placeholders) */
-  path: string;
-  /** Query parameters */
-  queryParams?: Record<string, string>;
-  /** Request body schema (Zod schema) */
-  requestSchema?: z.ZodSchema;
-  /** Response schema (Zod schema) */
-  responseSchema?: z.ZodSchema;
-  /** Pagination configuration */
-  pagination?: PaginationConfig;
-  /** Rate limiting for this endpoint */
-  rateLimit?: {
-    requests: number;
-    period: 'second' | 'minute' | 'hour';
-  };
-}
+export type SyncFrequency = 
+  | 'realtime'
+  | 'hourly'
+  | 'daily'
+  | 'weekly'
+  | 'manual';
 
-export interface PaginationConfig {
-  type: 'cursor' | 'offset' | 'page' | 'link';
-  pageParam?: string;
-  pageSizeParam?: string;
-  defaultPageSize?: number;
-  maxPageSize?: number;
-  cursorField?: string;
-  nextLinkField?: string;
-}
+export type SyncOperation = 
+  | 'full_sync'
+  | 'incremental_sync'
+  | 'webhook';
 
-// Transform definitions
-export interface TransformDefinition {
-  /** Source entity name */
-  source: string;
-  /** Target entity name */
-  target: string;
-  /** Field mappings */
-  mappings: FieldMapping[];
-  /** Post-transform hooks */
-  hooks?: TransformHook[];
-}
-
-export interface FieldMapping {
-  /** Source field path (dot notation for nested) */
-  from: string;
-  /** Target field name */
-  to: string;
-  /** Transform function */
-  transform?: TransformFunction;
-  /** Default value if source is null/undefined */
-  default?: unknown;
-}
-
-export type TransformFunction =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'date'
-  | 'datetime'
-  | 'json'
-  | 'array'
-  | 'currency'
-  | { custom: string }; // Custom function name
-
-export interface TransformHook {
-  type: 'before' | 'after';
-  handler: string; // Function name
-}
-
-// Webhook definitions
-export interface WebhookDefinition {
-  /** Event type from provider */
-  providerEvent: string;
-  /** Mapped internal event type */
-  internalEvent: string;
-  /** Entity this webhook updates */
-  entity: string;
-  /** Signature verification */
-  signature?: {
-    header: string;
-    algorithm: 'sha256' | 'sha1' | 'md5';
-    secret: string; // Reference to config field
-  };
-}
-
-// Full connector definition
-export interface ConnectorDefinition {
-  metadata: ConnectorMetadata;
-  auth: AuthConfig;
-  config: ConfigFieldDefinition[];
-  sync: SyncConfig;
-  entities: EntityDefinition[];
-  endpoints: EndpointDefinition[];
-  transforms: TransformDefinition[];
-  webhooks?: WebhookDefinition[];
-}
-
-// Runtime context passed to connector methods
-export interface ConnectorContext {
-  workspaceId: string;
-  connectorId: string;
-  credentials: Record<string, string>;
-  config: Record<string, unknown>;
-  logger: ConnectorLogger;
-}
-
-export interface ConnectorLogger {
-  debug(message: string, meta?: Record<string, unknown>): void;
-  info(message: string, meta?: Record<string, unknown>): void;
-  warn(message: string, meta?: Record<string, unknown>): void;
-  error(message: string, meta?: Record<string, unknown>): void;
-}
-
-// Sync result types
+// Sync result
 export interface SyncResult {
   success: boolean;
-  entity: string;
+  entityType: EntityType;
   recordsProcessed: number;
   recordsCreated: number;
   recordsUpdated: number;
   recordsDeleted: number;
   errors: SyncError[];
-  cursor?: string;
-  hasMore: boolean;
+  durationMs: number;
+  cursor?: string;  // For pagination
 }
 
 export interface SyncError {
   recordId?: string;
-  field?: string;
   message: string;
-  code: string;
+  code?: string;
+  retryable: boolean;
 }
 
-// Webhook event result
-export interface WebhookResult {
-  processed: boolean;
-  event: string;
-  entity?: string;
-  action?: 'created' | 'updated' | 'deleted';
-  recordId?: string;
+// Connection status
+export interface ConnectionStatus {
+  connected: boolean;
+  lastCheckedAt: Date;
+  lastSyncAt?: Date;
   error?: string;
+  details?: Record<string, unknown>;
+}
+
+// Webhook configuration
+export interface WebhookConfig {
+  supportedEvents: string[];
+  verificationMethod: 'hmac' | 'signature' | 'token' | 'none';
+  secretHeaderName?: string;
+}
+
+export interface WebhookEvent {
+  id: string;
+  type: string;
+  timestamp: Date;
+  data: Record<string, unknown>;
+  raw?: unknown;
+}
+
+// Field mapping
+export interface FieldMapping {
+  sourceField: string;
+  targetField: string;
+  transform?: TransformFunction;
+}
+
+export type TransformFunction = 
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'currency'
+  | 'json'
+  | ((value: unknown) => unknown);
+
+// Connector configuration schema
+export interface ConfigField {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'select' | 'multiselect' | 'password';
+  label: string;
+  description?: string;
+  required: boolean;
+  default?: unknown;
+  options?: { value: string; label: string }[];
+  validation?: {
+    min?: number;
+    max?: number;
+    pattern?: string;
+    message?: string;
+  };
+}
+
+// Rate limiting
+export interface RateLimitConfig {
+  requestsPerSecond?: number;
+  requestsPerMinute?: number;
+  requestsPerHour?: number;
+  retryAfterHeader?: string;
+}
+
+// Complete connector definition
+export interface ConnectorDefinition {
+  metadata: ConnectorMetadata;
+  auth: AuthConfig;
+  config: ConfigField[];
+  sync: SyncConfig;
+  webhooks?: WebhookConfig;
+  rateLimit?: RateLimitConfig;
+  fieldMappings: Record<EntityType, FieldMapping[]>;
+}
+
+// Connector instance state
+export interface ConnectorState {
+  workspaceId: string;
+  connectorId: string;
+  credentials: Record<string, unknown>;
+  config: Record<string, unknown>;
+  lastSyncCursors: Record<EntityType, string | undefined>;
+}
+
+// Normalized data types that connectors should output
+export interface NormalizedCustomer {
+  externalId: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  createdAt: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export interface NormalizedOrder {
+  externalId: string;
+  customerId?: string;
+  status: string;
+  financialStatus: string;
+  fulfillmentStatus?: string;
+  currency: string;
+  totalPrice: number;
+  subtotalPrice: number;
+  totalTax: number;
+  totalDiscount: number;
+  lineItems: NormalizedLineItem[];
+  createdAt: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export interface NormalizedLineItem {
+  externalId: string;
+  productId?: string;
+  variantId?: string;
+  name: string;
+  quantity: number;
+  price: number;
+  totalDiscount: number;
+}
+
+export interface NormalizedProduct {
+  externalId: string;
+  name: string;
+  description?: string;
+  status: 'active' | 'draft' | 'archived';
+  vendor?: string;
+  category?: string;
+  tags?: string[];
+  variants: NormalizedVariant[];
+  createdAt: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export interface NormalizedVariant {
+  externalId: string;
+  sku?: string;
+  price: number;
+  compareAtPrice?: number;
+  inventoryQuantity?: number;
+  weight?: number;
+  weightUnit?: string;
+}
+
+export interface NormalizedSubscription {
+  externalId: string;
+  customerId: string;
+  planId?: string;
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'paused';
+  currency: string;
+  amount: number;
+  interval: 'day' | 'week' | 'month' | 'year';
+  intervalCount: number;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  canceledAt?: Date;
+  createdAt: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export interface NormalizedInvoice {
+  externalId: string;
+  customerId: string;
+  subscriptionId?: string;
+  status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
+  currency: string;
+  amountDue: number;
+  amountPaid: number;
+  dueDate?: Date;
+  paidAt?: Date;
+  createdAt: Date;
+  metadata?: Record<string, unknown>;
 }

@@ -1,9 +1,27 @@
-// AI Business OS Connector SDK
-// Build custom connectors to integrate any data source
+/**
+ * AI Business OS - Connector SDK
+ * 
+ * This SDK provides the foundation for building custom connectors
+ * that integrate external data sources with AI Business OS.
+ */
 
+// Core types and interfaces
 export * from './types';
-export * from './base-connector';
+
+// Base connector class
+export { BaseConnector } from './base-connector';
+
+// Authentication utilities
 export * from './auth';
+
+// Data transformation utilities
 export * from './transforms';
-export * from './validators';
+
+// Validation utilities
+export * from './validation';
+
+// Testing utilities
 export * from './testing';
+
+// Schema definitions
+export * from './schemas';

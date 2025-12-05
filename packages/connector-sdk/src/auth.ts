@@ -1,260 +1,162 @@
-// Authentication utilities for connectors
+/**
+ * Authentication utilities for connectors
+ */
 
-import { AuthConfig, OAuth2Config } from './types';
+import type { OAuth2Config } from './types';
 
 /**
- * OAuth2 flow helper
+ * OAuth2 authorization URL builder
  */
-export class OAuth2Helper {
-  private config: OAuth2Config;
-  private baseUrl: string;
+export function buildOAuth2AuthorizationUrl(
+  config: OAuth2Config,
+  state: string,
+  additionalParams?: Record<string, string>
+): string {
+  const url = new URL(config.authorizationUrl);
+  
+  url.searchParams.set('client_id', config.clientId);
+  url.searchParams.set('redirect_uri', config.redirectUri || '');
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('scope', config.scopes.join(' '));
+  url.searchParams.set('state', state);
 
-  constructor(config: OAuth2Config, baseUrl: string) {
-    this.config = config;
-    this.baseUrl = baseUrl;
-  }
-
-  /**
-   * Generate authorization URL for OAuth2 flow
-   */
-  getAuthorizationUrl(params: {
-    clientId: string;
-    redirectUri: string;
-    state: string;
-    extraParams?: Record<string, string>;
-  }): string {
-    const url = new URL(this.config.authorizationUrl);
-    
-    url.searchParams.set('client_id', params.clientId);
-    url.searchParams.set('redirect_uri', params.redirectUri);
-    url.searchParams.set('response_type', 'code');
-    url.searchParams.set('state', params.state);
-    
-    if (this.config.scopes.length > 0) {
-      url.searchParams.set('scope', this.config.scopes.join(' '));
-    }
-    
-    if (params.extraParams) {
-      Object.entries(params.extraParams).forEach(([key, value]) => {
-        url.searchParams.set(key, value);
-      });
-    }
-    
-    return url.toString();
-  }
-
-  /**
-   * Exchange authorization code for tokens
-   */
-  async exchangeCode(params: {
-    code: string;
-    clientId: string;
-    clientSecret: string;
-    redirectUri: string;
-  }): Promise<{
-    accessToken: string;
-    refreshToken?: string;
-    expiresIn?: number;
-    tokenType?: string;
-  }> {
-    const response = await fetch(this.config.tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code: params.code,
-        client_id: params.clientId,
-        client_secret: params.clientSecret,
-        redirect_uri: params.redirectUri,
-      }),
+  if (additionalParams) {
+    Object.entries(additionalParams).forEach(([key, value]) => {
+      url.searchParams.set(key, value);
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Token exchange failed: ${error}`);
-    }
-
-    const data = await response.json();
-
-    return {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-      expiresIn: data.expires_in,
-      tokenType: data.token_type,
-    };
   }
 
-  /**
-   * Refresh access token using refresh token
-   */
-  async refreshToken(params: {
-    refreshToken: string;
-    clientId: string;
-    clientSecret: string;
-  }): Promise<{
-    accessToken: string;
-    refreshToken?: string;
-    expiresIn?: number;
-  }> {
-    const response = await fetch(this.config.tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: params.refreshToken,
-        client_id: params.clientId,
-        client_secret: params.clientSecret,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Token refresh failed: ${error}`);
-    }
-
-    const data = await response.json();
-
-    return {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token || params.refreshToken,
-      expiresIn: data.expires_in,
-    };
-  }
+  return url.toString();
 }
 
 /**
- * Validate API key format
+ * Exchange authorization code for access token
  */
-export function validateApiKey(
-  key: string,
-  pattern?: string
-): { valid: boolean; error?: string } {
-  if (!key || key.trim().length === 0) {
-    return { valid: false, error: 'API key is required' };
+export async function exchangeOAuth2Code(
+  config: OAuth2Config,
+  code: string,
+  redirectUri?: string
+): Promise<OAuth2TokenResponse> {
+  const response = await fetch(config.tokenUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      code,
+      redirect_uri: redirectUri || config.redirectUri || '',
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`OAuth2 token exchange failed: ${error}`);
   }
 
-  if (pattern) {
-    const regex = new RegExp(pattern);
-    if (!regex.test(key)) {
-      return { valid: false, error: 'API key format is invalid' };
-    }
-  }
-
-  return { valid: true };
+  return response.json() as Promise<OAuth2TokenResponse>;
 }
 
 /**
- * Mask sensitive credentials for logging
+ * Refresh OAuth2 access token
  */
-export function maskCredentials(
-  credentials: Record<string, string>
+export async function refreshOAuth2Token(
+  config: OAuth2Config,
+  refreshToken: string
+): Promise<OAuth2TokenResponse> {
+  const response = await fetch(config.tokenUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      refresh_token: refreshToken,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`OAuth2 token refresh failed: ${error}`);
+  }
+
+  return response.json() as Promise<OAuth2TokenResponse>;
+}
+
+export interface OAuth2TokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in?: number;
+  refresh_token?: string;
+  scope?: string;
+}
+
+/**
+ * Generate a secure random state parameter
+ */
+export function generateOAuth2State(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Validate OAuth2 state parameter
+ */
+export function validateOAuth2State(received: string, expected: string): boolean {
+  if (received.length !== expected.length) {
+    return false;
+  }
+  
+  // Timing-safe comparison
+  let result = 0;
+  for (let i = 0; i < received.length; i++) {
+    result |= received.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
+ * Check if an OAuth2 token is expired
+ */
+export function isTokenExpired(
+  issuedAt: Date,
+  expiresIn: number,
+  bufferSeconds: number = 60
+): boolean {
+  const expirationTime = issuedAt.getTime() + (expiresIn - bufferSeconds) * 1000;
+  return Date.now() >= expirationTime;
+}
+
+/**
+ * Create API key header
+ */
+export function createApiKeyHeader(
+  apiKey: string,
+  headerName: string = 'Authorization',
+  prefix: string = 'Bearer'
 ): Record<string, string> {
-  const masked: Record<string, string> = {};
-
-  for (const [key, value] of Object.entries(credentials)) {
-    if (
-      key.toLowerCase().includes('key') ||
-      key.toLowerCase().includes('secret') ||
-      key.toLowerCase().includes('token') ||
-      key.toLowerCase().includes('password')
-    ) {
-      if (value.length > 8) {
-        masked[key] = value.substring(0, 4) + '...' + value.slice(-4);
-      } else {
-        masked[key] = '***';
-      }
-    } else {
-      masked[key] = value;
-    }
-  }
-
-  return masked;
+  return {
+    [headerName]: prefix ? `${prefix} ${apiKey}` : apiKey,
+  };
 }
 
 /**
- * Build auth configuration from definition
+ * Create Basic Auth header
  */
-export function buildAuthConfig(auth: AuthConfig): {
-  fields: Array<{
-    name: string;
-    label: string;
-    type: string;
-    required: boolean;
-    placeholder?: string;
-    helpText?: string;
-  }>;
-} {
-  const fields: Array<{
-    name: string;
-    label: string;
-    type: string;
-    required: boolean;
-    placeholder?: string;
-    helpText?: string;
-  }> = [];
-
-  switch (auth.type) {
-    case 'api_key':
-      fields.push({
-        name: 'api_key',
-        label: 'API Key',
-        type: 'password',
-        required: true,
-        placeholder: 'Enter your API key',
-        helpText: 'Your API key from the provider dashboard',
-      });
-      break;
-
-    case 'basic':
-      fields.push(
-        {
-          name: 'username',
-          label: auth.basicAuth?.usernameField || 'Username',
-          type: 'text',
-          required: true,
-        },
-        {
-          name: 'password',
-          label: auth.basicAuth?.passwordField || 'Password',
-          type: 'password',
-          required: true,
-        }
-      );
-      break;
-
-    case 'bearer':
-      fields.push({
-        name: 'access_token',
-        label: 'Access Token',
-        type: 'password',
-        required: true,
-        placeholder: 'Enter your access token',
-      });
-      break;
-
-    case 'oauth2':
-      // OAuth2 is handled separately via OAuth flow
-      break;
-
-    case 'custom':
-      if (auth.customFields) {
-        fields.push(
-          ...auth.customFields.map((f) => ({
-            name: f.name,
-            label: f.label,
-            type: f.type,
-            required: f.required,
-            placeholder: f.placeholder,
-            helpText: f.helpText,
-          }))
-        );
-      }
-      break;
-  }
-
-  return { fields };
+export function createBasicAuthHeader(
+  username: string,
+  password: string
+): Record<string, string> {
+  const encoded = typeof Buffer !== 'undefined'
+    ? Buffer.from(`${username}:${password}`).toString('base64')
+    : btoa(`${username}:${password}`);
+  
+  return {
+    'Authorization': `Basic ${encoded}`,
+  };
 }

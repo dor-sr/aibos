@@ -1,292 +1,255 @@
-// Data transformation utilities for connectors
+/**
+ * Data transformation utilities for connectors
+ */
 
-import { TransformDefinition, FieldMapping, TransformFunction } from './types';
+import type { FieldMapping, TransformFunction } from './types';
 
 /**
- * Transform source data to target schema
+ * Apply field mappings to transform source data to normalized format
  */
-export function transformData<TSource, TTarget>(
-  source: TSource,
-  definition: TransformDefinition,
-  customTransforms?: Record<string, (value: unknown) => unknown>
-): TTarget {
+export function applyFieldMappings<T extends Record<string, unknown>>(
+  source: Record<string, unknown>,
+  mappings: FieldMapping[]
+): T {
   const result: Record<string, unknown> = {};
 
-  for (const mapping of definition.mappings) {
-    const sourceValue = getNestedValue(source, mapping.from);
-    const transformedValue = applyTransform(
-      sourceValue,
-      mapping,
-      customTransforms
-    );
-
-    if (transformedValue !== undefined || mapping.default !== undefined) {
-      result[mapping.to] = transformedValue ?? mapping.default;
+  for (const mapping of mappings) {
+    const sourceValue = getNestedValue(source, mapping.sourceField);
+    
+    if (sourceValue !== undefined) {
+      const transformedValue = mapping.transform
+        ? applyTransform(sourceValue, mapping.transform)
+        : sourceValue;
+      
+      setNestedValue(result, mapping.targetField, transformedValue);
     }
   }
 
-  return result as TTarget;
+  return result as T;
 }
 
 /**
- * Transform an array of records
+ * Get a nested value from an object using dot notation
  */
-export function transformDataArray<TSource, TTarget>(
-  sources: TSource[],
-  definition: TransformDefinition,
-  customTransforms?: Record<string, (value: unknown) => unknown>
-): TTarget[] {
-  return sources.map((source) =>
-    transformData<TSource, TTarget>(source, definition, customTransforms)
-  );
-}
-
-/**
- * Get nested value from object using dot notation
- */
-export function getNestedValue(
-  obj: unknown,
-  path: string
-): unknown {
-  if (!obj || typeof obj !== 'object') return undefined;
-
-  const keys = path.split('.');
+export function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  const parts = path.split('.');
   let current: unknown = obj;
 
-  for (const key of keys) {
-    if (current === null || current === undefined) return undefined;
-
-    // Handle array index notation
-    const arrayMatch = key.match(/^(\w+)\[(\d+)\]$/);
-    if (arrayMatch) {
-      const arrayKey = arrayMatch[1];
-      const index = arrayMatch[2];
-      if (arrayKey && index) {
-        current = (current as Record<string, unknown>)[arrayKey];
-        if (Array.isArray(current)) {
-          current = current[parseInt(index, 10)];
-        } else {
-          return undefined;
-        }
-      }
-    } else {
-      current = (current as Record<string, unknown>)[key];
+  for (const part of parts) {
+    if (current === null || current === undefined) {
+      return undefined;
     }
+    current = (current as Record<string, unknown>)[part];
   }
 
   return current;
 }
 
 /**
- * Set nested value in object using dot notation
+ * Set a nested value in an object using dot notation
  */
 export function setNestedValue(
   obj: Record<string, unknown>,
   path: string,
   value: unknown
 ): void {
-  const keys = path.split('.');
+  const parts = path.split('.');
   let current = obj;
 
-  for (let i = 0; i < keys.length - 1; i++) {
-    const key = keys[i]!;
-    if (!(key in current)) {
-      current[key] = {};
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i]!;
+    if (!(part in current)) {
+      current[part] = {};
     }
-    current = current[key] as Record<string, unknown>;
+    current = current[part] as Record<string, unknown>;
   }
 
-  const lastKey = keys[keys.length - 1];
-  if (lastKey) {
-    current[lastKey] = value;
+  const lastPart = parts[parts.length - 1];
+  if (lastPart) {
+    current[lastPart] = value;
   }
 }
 
 /**
- * Apply transform function to value
+ * Apply a transform function to a value
  */
-function applyTransform(
-  value: unknown,
-  mapping: FieldMapping,
-  customTransforms?: Record<string, (value: unknown) => unknown>
-): unknown {
-  if (value === null || value === undefined) {
-    return mapping.default;
+export function applyTransform(value: unknown, transform: TransformFunction): unknown {
+  if (typeof transform === 'function') {
+    return transform(value);
   }
 
-  if (!mapping.transform) {
-    return value;
-  }
-
-  // Handle built-in transforms
-  if (typeof mapping.transform === 'string') {
-    return applyBuiltInTransform(value, mapping.transform);
-  }
-
-  // Handle custom transforms
-  if ('custom' in mapping.transform) {
-    const customFn = customTransforms?.[mapping.transform.custom];
-    if (customFn) {
-      return customFn(value);
-    }
-    console.warn(`Custom transform not found: ${mapping.transform.custom}`);
-    return value;
-  }
-
-  return value;
-}
-
-/**
- * Apply built-in transform function
- */
-function applyBuiltInTransform(
-  value: unknown,
-  transform: TransformFunction
-): unknown {
   switch (transform) {
     case 'string':
       return String(value);
-
+    
     case 'number':
-      const num = Number(value);
-      return isNaN(num) ? 0 : num;
-
+      return parseNumber(value);
+    
     case 'boolean':
-      if (typeof value === 'boolean') return value;
-      if (typeof value === 'string') {
-        return ['true', '1', 'yes'].includes(value.toLowerCase());
-      }
-      return Boolean(value);
-
+      return parseBoolean(value);
+    
     case 'date':
-      if (value instanceof Date) {
-        return value.toISOString().split('T')[0];
-      }
-      const date = new Date(value as string | number);
-      return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0];
-
-    case 'datetime':
-      if (value instanceof Date) {
-        return value.toISOString();
-      }
-      const datetime = new Date(value as string | number);
-      return isNaN(datetime.getTime()) ? null : datetime.toISOString();
-
-    case 'json':
-      if (typeof value === 'string') {
-        try {
-          return JSON.parse(value);
-        } catch {
-          return value;
-        }
-      }
-      return value;
-
-    case 'array':
-      if (Array.isArray(value)) return value;
-      if (typeof value === 'string') {
-        // Try to parse as JSON array
-        try {
-          const parsed = JSON.parse(value);
-          return Array.isArray(parsed) ? parsed : [value];
-        } catch {
-          // Split by comma as fallback
-          return value.split(',').map((s) => s.trim());
-        }
-      }
-      return [value];
-
+      return parseDate(value);
+    
     case 'currency':
-      // Convert to cents/smallest unit
-      const amount = Number(value);
-      if (isNaN(amount)) return 0;
-      return Math.round(amount * 100);
-
+      return parseCurrency(value);
+    
+    case 'json':
+      return parseJson(value);
+    
     default:
       return value;
   }
 }
 
 /**
- * Create a field mapping
+ * Parse a value as a number
  */
-export function createMapping(
-  from: string,
-  to: string,
-  options?: {
-    transform?: TransformFunction;
-    default?: unknown;
+export function parseNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    // Remove currency symbols and commas
+    const cleaned = value.replace(/[^0-9.-]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
   }
-): FieldMapping {
-  return {
-    from,
-    to,
-    transform: options?.transform,
-    default: options?.default,
-  };
+  return 0;
 }
 
 /**
- * Create a transform definition
+ * Parse a value as a boolean
  */
-export function createTransform(
-  source: string,
-  target: string,
-  mappings: FieldMapping[]
-): TransformDefinition {
-  return {
-    source,
-    target,
-    mappings,
-  };
+export function parseBoolean(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    return ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
+  }
+  if (typeof value === 'number') return value !== 0;
+  return false;
 }
 
 /**
- * Merge multiple objects into one
+ * Parse a value as a Date
  */
-export function mergeObjects(
-  ...objects: Array<Record<string, unknown> | undefined>
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+export function parseDate(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? new Date() : date;
+  }
+  return new Date();
+}
 
-  for (const obj of objects) {
-    if (obj) {
-      Object.assign(result, obj);
+/**
+ * Parse a currency value (returns cents/smallest unit as integer)
+ */
+export function parseCurrency(value: unknown): number {
+  const num = parseNumber(value);
+  // Assume input is in major units (dollars), convert to minor units (cents)
+  return Math.round(num * 100);
+}
+
+/**
+ * Parse a JSON string
+ */
+export function parseJson(value: unknown): unknown {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
     }
   }
-
-  return result;
+  return value;
 }
 
 /**
- * Pick specific fields from object
+ * Format a currency value for display
  */
-export function pickFields<T extends Record<string, unknown>>(
-  obj: T,
-  fields: (keyof T)[]
-): Partial<T> {
-  const result: Partial<T> = {};
+export function formatCurrency(
+  amount: number,
+  currency: string = 'USD',
+  locale: string = 'en-US'
+): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+  }).format(amount / 100);
+}
 
-  for (const field of fields) {
-    if (field in obj) {
-      result[field] = obj[field];
+/**
+ * Format a date for display
+ */
+export function formatDate(
+  date: Date,
+  locale: string = 'en-US',
+  options?: Intl.DateTimeFormatOptions
+): string {
+  return new Intl.DateTimeFormat(locale, options).format(date);
+}
+
+/**
+ * Normalize an email address
+ */
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
+ * Normalize a phone number (basic)
+ */
+export function normalizePhone(phone: string): string {
+  return phone.replace(/[^0-9+]/g, '');
+}
+
+/**
+ * Create a slug from a string
+ */
+export function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Truncate a string to a maximum length
+ */
+export function truncate(str: string, maxLength: number, suffix: string = '...'): string {
+  if (str.length <= maxLength) return str;
+  return str.slice(0, maxLength - suffix.length) + suffix;
+}
+
+/**
+ * Deep merge two objects
+ */
+export function deepMerge<T extends Record<string, unknown>>(
+  target: T,
+  source: Partial<T>
+): T {
+  const result = { ...target };
+
+  for (const key in source) {
+    const sourceValue = source[key];
+    const targetValue = result[key];
+
+    if (
+      sourceValue &&
+      typeof sourceValue === 'object' &&
+      !Array.isArray(sourceValue) &&
+      targetValue &&
+      typeof targetValue === 'object' &&
+      !Array.isArray(targetValue)
+    ) {
+      result[key] = deepMerge(
+        targetValue as Record<string, unknown>,
+        sourceValue as Record<string, unknown>
+      ) as T[Extract<keyof T, string>];
+    } else if (sourceValue !== undefined) {
+      result[key] = sourceValue as T[Extract<keyof T, string>];
     }
-  }
-
-  return result;
-}
-
-/**
- * Omit specific fields from object
- */
-export function omitFields<T extends Record<string, unknown>>(
-  obj: T,
-  fields: (keyof T)[]
-): Partial<T> {
-  const result: Partial<T> = { ...obj };
-
-  for (const field of fields) {
-    delete result[field];
   }
 
   return result;

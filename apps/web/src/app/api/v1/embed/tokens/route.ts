@@ -1,4 +1,4 @@
-// Public API v1 - Embed Tokens management
+// Public API v1 - Embed Token Management
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
@@ -50,13 +50,10 @@ export async function GET(request: NextRequest) {
   
   const { page, pageSize, offset } = parsePagination(searchParams);
   
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-  
-  const { data: tokens, error, count } = await serviceClient
+  // List embed tokens
+  const { data: tokens, error, count } = await supabase
     .from('embed_tokens')
-    .select('id, name, description, token_prefix, permissions, customization, allowed_domains, status, expires_at, last_used_at, view_count, created_at', { count: 'exact' })
+    .select('id, name, description, token_prefix, allowed_domains, permissions, customization, status, expires_at, last_used_at, view_count, created_at', { count: 'exact' })
     .eq('workspace_id', workspaceId)
     .order('created_at', { ascending: false })
     .range(offset, offset + pageSize - 1);
@@ -72,9 +69,9 @@ export async function GET(request: NextRequest) {
       name: t.name,
       description: t.description,
       tokenPrefix: t.token_prefix,
+      allowedDomains: t.allowed_domains,
       permissions: t.permissions,
       customization: t.customization,
-      allowedDomains: t.allowed_domains,
       status: t.status,
       expiresAt: t.expires_at,
       lastUsedAt: t.last_used_at,
@@ -146,7 +143,11 @@ export async function POST(request: NextRequest) {
     .eq('user_id', user.id)
     .single();
   
-  if (!membership || !['owner', 'admin'].includes(membership.role)) {
+  if (!membership) {
+    return createApiError('Workspace not found or access denied', 'NOT_FOUND', 404);
+  }
+  
+  if (membership.role !== 'owner' && membership.role !== 'admin') {
     return createApiError('Admin access required', 'INSUFFICIENT_SCOPE', 403);
   }
   
@@ -160,11 +161,12 @@ export async function POST(request: NextRequest) {
     expiresAt.setDate(expiresAt.getDate() + body.expires_in_days);
   }
   
+  // Create service client for insert
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
   
-  const { data: newToken, error } = await serviceClient
+  const { data: newToken, error: insertError } = await serviceClient
     .from('embed_tokens')
     .insert({
       workspace_id: body.workspace_id,
@@ -178,11 +180,11 @@ export async function POST(request: NextRequest) {
       customization: body.customization || null,
       expires_at: expiresAt?.toISOString() || null,
     })
-    .select('id, name, description, token_prefix, permissions, customization, allowed_domains, status, expires_at, created_at')
+    .select('id, name, description, token_prefix, allowed_domains, permissions, customization, status, expires_at, created_at')
     .single();
   
-  if (error) {
-    console.error('Error creating embed token:', error);
+  if (insertError) {
+    console.error('Error creating embed token:', insertError);
     return createApiError('Failed to create embed token', 'INTERNAL_ERROR', 500);
   }
   
@@ -192,13 +194,13 @@ export async function POST(request: NextRequest) {
     description: newToken.description,
     token: token, // Only shown once!
     tokenPrefix: newToken.token_prefix,
+    allowedDomains: newToken.allowed_domains,
     permissions: newToken.permissions,
     customization: newToken.customization,
-    allowedDomains: newToken.allowed_domains,
     status: newToken.status,
     expiresAt: newToken.expires_at,
     createdAt: newToken.created_at,
-    embedUrl: `/embed?token=${token}`,
+    embedUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/embed`,
     warning: 'Store this embed token securely. It will not be shown again.',
   });
 }
@@ -220,18 +222,14 @@ export async function DELETE(request: NextRequest) {
     return createApiError('Token id is required', 'MISSING_PARAMETER', 400);
   }
   
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-  
-  // Get token to verify workspace access
-  const { data: token } = await serviceClient
+  // Get token to verify workspace
+  const { data: token, error: tokenError } = await supabase
     .from('embed_tokens')
     .select('id, workspace_id')
     .eq('id', tokenId)
     .single();
   
-  if (!token) {
+  if (tokenError || !token) {
     return createApiError('Token not found', 'NOT_FOUND', 404);
   }
   
@@ -243,18 +241,18 @@ export async function DELETE(request: NextRequest) {
     .eq('user_id', user.id)
     .single();
   
-  if (!membership || !['owner', 'admin'].includes(membership.role)) {
+  if (!membership || (membership.role !== 'owner' && membership.role !== 'admin')) {
     return createApiError('Admin access required', 'INSUFFICIENT_SCOPE', 403);
   }
   
   // Revoke token
-  const { error } = await serviceClient
+  const { error: updateError } = await supabase
     .from('embed_tokens')
     .update({ status: 'revoked', updated_at: new Date().toISOString() })
     .eq('id', tokenId);
   
-  if (error) {
-    console.error('Error revoking embed token:', error);
+  if (updateError) {
+    console.error('Error revoking embed token:', updateError);
     return createApiError('Failed to revoke token', 'INTERNAL_ERROR', 500);
   }
   
