@@ -65,24 +65,24 @@ This document outlines the implementation plan for V1 of the AI Business OS plat
 ---
 
 ### Stage 2: Data Model and Authentication
-**Status**: Pending
+**Status**: Completed
 
 #### 2.1 Authentication Flow
-- [ ] Implement Supabase Auth in web app
-- [ ] Create auth middleware
-- [ ] Build sign-up/sign-in pages
-- [ ] Implement session management
+- [x] Implement Supabase Auth in web app
+- [x] Create auth middleware
+- [x] Build sign-up/sign-in pages
+- [x] Implement session management
 
 #### 2.2 Core Data Model
-- [ ] Design workspace schema
-- [ ] Design user membership schema
-- [ ] Design vertical pack configuration schema
-- [ ] Create initial migrations
+- [x] Design workspace schema
+- [x] Design user membership schema
+- [x] Design vertical pack configuration schema
+- [x] Create initial migrations (schemas ready for db:push)
 
 #### 2.3 Onboarding Flow
-- [ ] Create workspace creation UI
-- [ ] Implement vertical selection (ecommerce/saas)
-- [ ] Store workspace configuration
+- [x] Create workspace creation UI
+- [x] Implement vertical selection (ecommerce/saas)
+- [x] Store workspace configuration (API: POST /api/workspaces)
 
 ---
 
@@ -242,22 +242,23 @@ This document outlines the implementation plan for V1 of the AI Business OS plat
 
 ## Current Task
 
-**Stage 2 - Data Model and Authentication**
+**Stage 3 - Connectors and Ingestion**
 
-Stage 1 is complete. The monorepo structure is set up with all packages scaffolded. 
+Stage 2 is complete. The authentication flow, data model, and onboarding are implemented.
 
 Next steps:
-1. Run `pnpm install` to install dependencies
-2. Create a Supabase project and add credentials to `.env.local`
-3. Run `pnpm db:push` to create database tables
-4. Implement the full authentication flow
-5. Build the onboarding workspace creation API
+1. Set up Supabase project and add credentials to `.env.local`
+2. Run `pnpm db:push` to create database tables
+3. Test the auth flow and workspace creation
+4. Implement the Connector Framework
+5. Build the Shopify connector for ecommerce
 
 Subtasks:
-1. Create `.env.local` with Supabase credentials
-2. Test database connection with `pnpm db:studio`
-3. Implement workspace creation API route
-4. Wire onboarding page to create workspace in database
+1. Create `.env.local` with Supabase and database credentials
+2. Run `pnpm db:push` to sync schema with database
+3. Create `/packages/connectors` base structure implementation
+4. Define connector interface
+5. Implement connection storage and OAuth handling
 
 ---
 

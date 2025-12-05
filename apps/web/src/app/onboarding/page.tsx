@@ -65,10 +65,22 @@ export default function OnboardingPage() {
 
     setLoading(true);
 
-    // In production, this would call the API to create the workspace
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch('/api/workspaces', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: workspaceName,
+          verticalType: selectedVertical,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create workspace');
+      }
 
       toast({
         title: 'Workspace created',
@@ -76,10 +88,11 @@ export default function OnboardingPage() {
       });
 
       router.push('/dashboard');
-    } catch {
+      router.refresh();
+    } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to create workspace',
+        description: error instanceof Error ? error.message : 'Failed to create workspace',
         variant: 'destructive',
       });
     } finally {

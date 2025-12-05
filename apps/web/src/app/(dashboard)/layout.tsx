@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { DashboardNav } from '@/components/dashboard/nav';
 import { DashboardHeader } from '@/components/dashboard/header';
+import { hasWorkspace } from '@/lib/workspace';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -11,6 +12,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) {
     redirect('/login');
+  }
+
+  // Check if user has a workspace, redirect to onboarding if not
+  const userHasWorkspace = await hasWorkspace(user.id);
+  if (!userHasWorkspace) {
+    redirect('/onboarding');
   }
 
   return (
