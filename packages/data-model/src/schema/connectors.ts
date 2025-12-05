@@ -63,7 +63,7 @@ export const syncLogs = pgTable('sync_logs', {
 });
 
 // Type definitions for JSONB columns
-interface ConnectorCredentials {
+export interface ConnectorCredentials {
   accessToken?: string;
   refreshToken?: string;
   expiresAt?: string;
@@ -72,7 +72,7 @@ interface ConnectorCredentials {
   [key: string]: unknown;
 }
 
-interface ConnectorSettings {
+export interface ConnectorSettings {
   syncInterval?: number; // minutes
   syncHistory?: boolean; // whether to sync historical data
   [key: string]: unknown;

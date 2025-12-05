@@ -16,7 +16,8 @@
     "@aibos/data-model": "workspace:*",
     "@aibos/connectors": "workspace:*",
     "@aibos/analytics-agent": "workspace:*",
-    "cron": "^3.2.1"
+    "cron": "^3.2.1",
+    "drizzle-orm": "^0.37.0"
   },
   "devDependencies": {
     "@types/cron": "^2.4.1",

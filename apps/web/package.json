@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aibos/core": "workspace:*",
+    "@aibos/connectors": "workspace:*",
     "@aibos/data-model": "workspace:*",
     "drizzle-orm": "^0.37.0",
     "@radix-ui/react-avatar": "^1.1.2",

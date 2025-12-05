@@ -1,4 +1,6 @@
 import { createLogger, generateId } from '@aibos/core';
+import { db, ecommerceCustomers, type NewEcommerceCustomer } from '@aibos/data-model';
+import { eq, and } from 'drizzle-orm';
 import type { ShopifyClient, ShopifyCustomer, ListCustomersParams } from './client';
 
 const logger = createLogger('shopify:customers');
@@ -58,27 +60,54 @@ export async function syncCustomers(
  * Process a single Shopify customer into normalized schema
  */
 async function processCustomer(customer: ShopifyCustomer, workspaceId: string): Promise<void> {
+  const externalId = customer.id.toString();
+
+  // Check if customer already exists
+  const existing = await db
+    .select({ id: ecommerceCustomers.id })
+    .from(ecommerceCustomers)
+    .where(
+      and(
+        eq(ecommerceCustomers.workspaceId, workspaceId),
+        eq(ecommerceCustomers.source, 'shopify'),
+        eq(ecommerceCustomers.externalId, externalId)
+      )
+    )
+    .limit(1);
+
   // Transform Shopify customer to normalized format
-  const normalizedCustomer = {
-    id: generateId(),
+  const normalizedCustomer: NewEcommerceCustomer = {
+    id: existing[0]?.id ?? generateId(),
     workspaceId,
-    externalId: customer.id.toString(),
+    externalId,
     source: 'shopify',
     email: customer.email,
     firstName: customer.first_name,
     lastName: customer.last_name,
     phone: customer.phone,
     totalOrders: customer.orders_count,
-    totalSpent: parseFloat(customer.total_spent),
+    totalSpent: customer.total_spent,
     currency: customer.currency,
-    tags: customer.tags ? customer.tags.split(',').map((t) => t.trim()) : [],
+    tags: customer.tags ? customer.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
     sourceCreatedAt: new Date(customer.created_at),
+    updatedAt: new Date(),
   };
 
-  // TODO: Write to database using @aibos/data-model
+  // Upsert customer
+  const existingRecord = existing[0];
+  if (existingRecord) {
+    await db
+      .update(ecommerceCustomers)
+      .set(normalizedCustomer)
+      .where(eq(ecommerceCustomers.id, existingRecord.id));
+  } else {
+    await db.insert(ecommerceCustomers).values(normalizedCustomer);
+  }
+
   logger.debug('Processed customer', {
-    customerId: normalizedCustomer.externalId,
-    email: normalizedCustomer.email,
+    customerId: externalId,
+    email: customer.email,
+    isUpdate: existing.length > 0,
   });
 }
 

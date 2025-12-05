@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
     // Create workspace
     const workspaceId = generateId();
-    const [workspace] = await db
+    const insertedWorkspaces = await db
       .insert(workspaces)
       .values({
         id: workspaceId,
@@ -82,6 +82,14 @@ export async function POST(request: Request) {
         activeAgents: ['analytics'],
       })
       .returning();
+
+    const workspace = insertedWorkspaces[0];
+    if (!workspace) {
+      return NextResponse.json(
+        { error: 'Failed to create workspace' },
+        { status: 500 }
+      );
+    }
 
     // Create membership for the owner
     await db.insert(workspaceMemberships).values({

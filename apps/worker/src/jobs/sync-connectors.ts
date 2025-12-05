@@ -1,7 +1,16 @@
-import { createLogger } from '@aibos/core';
+import { createLogger, generateId } from '@aibos/core';
+import { db, connectors, syncLogs } from '@aibos/data-model';
+import { ShopifyClient, syncOrders, syncProducts, syncCustomers } from '@aibos/connectors';
+import { eq, and } from 'drizzle-orm';
 import type { JobContext } from './index';
 
 const logger = createLogger('jobs:sync-connectors');
+
+interface ConnectorCredentials {
+  accessToken?: string;
+  shopDomain?: string;
+  [key: string]: unknown;
+}
 
 /**
  * Sync data from all connected data sources
@@ -31,16 +40,27 @@ export async function syncConnectors(context: JobContext): Promise<void> {
 async function syncSingleConnector(workspaceId: string, connectorId: string): Promise<void> {
   logger.info('Syncing single connector', { workspaceId, connectorId });
 
-  // TODO: Implement actual sync logic
-  // 1. Get connector configuration from database
-  // 2. Initialize the appropriate connector client (Shopify, Stripe, etc.)
-  // 3. Fetch data since last sync
-  // 4. Transform to normalized schema
-  // 5. Write to database
-  // 6. Update last sync timestamp
+  // Get connector configuration from database
+  const connector = await db
+    .select()
+    .from(connectors)
+    .where(
+      and(
+        eq(connectors.id, connectorId),
+        eq(connectors.workspaceId, workspaceId),
+        eq(connectors.isEnabled, true),
+        eq(connectors.status, 'connected')
+      )
+    )
+    .limit(1);
 
-  // Placeholder for now
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  const conn = connector[0];
+  if (!conn) {
+    logger.warn('Connector not found or not active', { workspaceId, connectorId });
+    return;
+  }
+
+  await runConnectorSync(conn);
 
   logger.info('Single connector sync completed', { workspaceId, connectorId });
 }
@@ -48,20 +68,169 @@ async function syncSingleConnector(workspaceId: string, connectorId: string): Pr
 async function syncWorkspaceConnectors(workspaceId: string): Promise<void> {
   logger.info('Syncing workspace connectors', { workspaceId });
 
-  // TODO: Get all active connectors for workspace and sync each
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Get all active connectors for workspace
+  const activeConnectors = await db
+    .select()
+    .from(connectors)
+    .where(
+      and(
+        eq(connectors.workspaceId, workspaceId),
+        eq(connectors.isEnabled, true),
+        eq(connectors.status, 'connected')
+      )
+    );
 
-  logger.info('Workspace connector sync completed', { workspaceId });
+  for (const conn of activeConnectors) {
+    await runConnectorSync(conn);
+  }
+
+  logger.info('Workspace connector sync completed', { workspaceId, connectorCount: activeConnectors.length });
 }
 
 async function syncAllConnectors(): Promise<void> {
   logger.info('Syncing all connectors');
 
-  // TODO: Get all active connectors across all workspaces
-  // Process in batches to avoid overwhelming external APIs
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Get all active connectors across all workspaces
+  const activeConnectors = await db
+    .select()
+    .from(connectors)
+    .where(
+      and(
+        eq(connectors.isEnabled, true),
+        eq(connectors.status, 'connected')
+      )
+    );
 
-  logger.info('All connectors sync completed');
+  // Process connectors sequentially to avoid overwhelming external APIs
+  for (const conn of activeConnectors) {
+    try {
+      await runConnectorSync(conn);
+    } catch (error) {
+      logger.error('Connector sync failed', error as Error, {
+        connectorId: conn.id,
+        workspaceId: conn.workspaceId,
+      });
+    }
+  }
+
+  logger.info('All connectors sync completed', { connectorCount: activeConnectors.length });
+}
+
+async function runConnectorSync(conn: typeof connectors.$inferSelect): Promise<void> {
+  const syncLogId = generateId();
+  const startedAt = new Date();
+
+  // Create sync log entry
+  await db.insert(syncLogs).values({
+    id: syncLogId,
+    connectorId: conn.id,
+    workspaceId: conn.workspaceId,
+    status: 'running',
+    startedAt,
+  });
+
+  // Update connector sync status
+  await db
+    .update(connectors)
+    .set({ lastSyncStatus: 'running' })
+    .where(eq(connectors.id, conn.id));
+
+  try {
+    let recordsProcessed: Record<string, number> = {};
+
+    switch (conn.type) {
+      case 'shopify':
+        recordsProcessed = await syncShopifyConnector(conn);
+        break;
+      // Add other connector types here
+      default:
+        logger.warn('Unknown connector type', { type: conn.type });
+    }
+
+    // Update sync log with success
+    await db
+      .update(syncLogs)
+      .set({
+        status: 'completed',
+        completedAt: new Date(),
+        recordsProcessed: JSON.stringify(recordsProcessed),
+      })
+      .where(eq(syncLogs.id, syncLogId));
+
+    // Update connector with success
+    await db
+      .update(connectors)
+      .set({
+        lastSyncAt: new Date(),
+        lastSyncStatus: 'completed',
+        lastSyncError: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(connectors.id, conn.id));
+
+    logger.info('Connector sync completed', {
+      connectorId: conn.id,
+      type: conn.type,
+      recordsProcessed,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Update sync log with failure
+    await db
+      .update(syncLogs)
+      .set({
+        status: 'failed',
+        completedAt: new Date(),
+        error: errorMessage,
+      })
+      .where(eq(syncLogs.id, syncLogId));
+
+    // Update connector with failure
+    await db
+      .update(connectors)
+      .set({
+        lastSyncAt: new Date(),
+        lastSyncStatus: 'failed',
+        lastSyncError: errorMessage,
+        updatedAt: new Date(),
+      })
+      .where(eq(connectors.id, conn.id));
+
+    throw error;
+  }
+}
+
+async function syncShopifyConnector(
+  conn: typeof connectors.$inferSelect
+): Promise<Record<string, number>> {
+  const credentials = conn.credentials as ConnectorCredentials | null;
+
+  if (!credentials?.accessToken || !credentials?.shopDomain) {
+    throw new Error('Missing Shopify credentials');
+  }
+
+  const client = new ShopifyClient({
+    shopDomain: credentials.shopDomain,
+    accessToken: credentials.accessToken,
+  });
+
+  // Test connection
+  const isConnected = await client.testConnection();
+  if (!isConnected) {
+    throw new Error('Failed to connect to Shopify');
+  }
+
+  // Sync in order: customers first (for FK references), then products, then orders
+  const customersCount = await syncCustomers(client, conn.workspaceId);
+  const productsCount = await syncProducts(client, conn.workspaceId);
+  const ordersCount = await syncOrders(client, conn.workspaceId);
+
+  return {
+    customers: customersCount,
+    products: productsCount,
+    orders: ordersCount,
+  };
 }
 
 

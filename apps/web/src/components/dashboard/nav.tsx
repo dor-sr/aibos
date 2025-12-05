@@ -8,22 +8,22 @@ import { BarChart3, Settings, Plug, FileText } from 'lucide-react';
 const navItems = [
   {
     title: 'Overview',
-    href: '/dashboard',
+    href: '/dashboard' as const,
     icon: BarChart3,
   },
   {
     title: 'Connectors',
-    href: '/dashboard/connectors',
+    href: '/dashboard/connectors' as const,
     icon: Plug,
   },
   {
     title: 'Reports',
-    href: '/dashboard/reports',
+    href: '/dashboard/reports' as const,
     icon: FileText,
   },
   {
     title: 'Settings',
-    href: '/dashboard/settings',
+    href: '/dashboard/settings' as const,
     icon: Settings,
   },
 ];

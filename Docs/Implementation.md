@@ -87,7 +87,7 @@ This document outlines the implementation plan for V1 of the AI Business OS plat
 ---
 
 ### Stage 3: Connectors and Ingestion
-**Status**: In Progress
+**Status**: Completed
 
 #### 3.1 Connector Framework
 - [x] Create `/packages/connectors` base structure
@@ -96,25 +96,26 @@ This document outlines the implementation plan for V1 of the AI Business OS plat
 
 #### 3.2 Shopify Connector (Ecommerce V1)
 - [x] Implement Shopify OAuth flow (API routes: /api/connectors/shopify)
-- [x] Create order ingestion (sync logic scaffolded)
-- [x] Create product ingestion (sync logic scaffolded)
-- [x] Create customer ingestion (sync logic scaffolded)
+- [x] Create order ingestion with database writes
+- [x] Create product ingestion with database writes
+- [x] Create customer ingestion with database writes
 
 #### 3.3 Normalized Data Schema
-- [ ] Ecommerce schema: orders, order_items, products, customers
-- [ ] SaaS schema: subscriptions, invoices, customers, plans
-- [ ] Create data transformers from raw to normalized
+- [x] Ecommerce schema: orders, order_items, products, customers
+- [x] SaaS schema: subscriptions, invoices, customers, plans
+- [x] Create data transformers from raw to normalized
 
 #### 3.4 Worker Ingestion Jobs
-- [ ] Set up job queue structure in worker
-- [ ] Implement full sync job
-- [ ] Implement incremental sync job
-- [ ] Configure scheduling (Supabase cron or node-cron)
+- [x] Set up job queue structure in worker
+- [x] Implement full sync job
+- [x] Implement incremental sync job (uses same sync with sinceId)
+- [x] Configure scheduling (node-cron every 6 hours)
+- [x] Create manual sync API route (/api/connectors/[connectorId]/sync)
 
 ---
 
 ### Stage 4: Analytics Agent Core
-**Status**: Pending
+**Status**: Not Started
 
 #### 4.1 AI Runtime Setup
 - [ ] Create `/packages/ai-runtime` with LLM abstraction
@@ -242,23 +243,22 @@ This document outlines the implementation plan for V1 of the AI Business OS plat
 
 ## Current Task
 
-**Stage 3 - Connectors and Ingestion (Completing)**
+**Stage 4 - Analytics Agent Core (Starting)**
 
-The connector framework and Shopify OAuth flow are implemented. UI for connector management is ready.
+Stage 3 is complete. The connector framework, Shopify sync with database writes, worker jobs with scheduling, and manual sync API are all implemented.
 
 Next steps:
-1. Set up Supabase project and add credentials to `.env.local`
+1. Set up Supabase project and add credentials to `.env.local` (if not done)
 2. Run `pnpm db:push` to create database tables
 3. Test the full auth and connector flow
-4. Implement actual database writes in sync functions
-5. Set up worker jobs for scheduled syncing
+4. Begin Stage 4: AI Runtime and Analytics Agent implementation
 
-Subtasks:
-1. Create `.env.local` with Supabase, database, and Shopify credentials
-2. Run `pnpm db:push` to sync schema with database
-3. Complete the database write logic in sync functions (orders, products, customers)
-4. Create sync trigger API route
-5. Wire up the worker scheduler
+Subtasks for Stage 4:
+1. Create `/packages/ai-runtime` with LLM abstraction
+2. Implement OpenAI provider
+3. Create tool/function calling helpers
+4. Build prompt template system
+5. Create `/packages/analytics-agent` with metric calculations
 
 ---
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ export default function LoginPage() {
       }
 
       const redirect = searchParams.get('redirect') || '/dashboard';
-      router.push(redirect);
+      router.push(redirect as '/');
       router.refresh();
     } catch {
       toast({
@@ -88,12 +88,27 @@ export default function LoginPage() {
         </form>
         <div className="mt-6 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-primary hover:underline">
-            Sign up
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+        <Link href="/signup" className="text-primary hover:underline">
+          Sign up
+        </Link>
+      </div>
+    </CardContent>
+  </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardDescription>Loading...</CardDescription>
+        </CardHeader>
+      </Card>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
 

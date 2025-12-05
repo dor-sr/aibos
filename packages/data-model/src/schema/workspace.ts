@@ -34,7 +34,7 @@ export const workspaces = pgTable('workspaces', {
 });
 
 // Type for workspace settings stored in JSONB
-interface WorkspaceSettings {
+export interface WorkspaceSettings {
   weekStartsOn: 0 | 1;
   fiscalYearStartMonth: number;
   reportingEmail?: string;

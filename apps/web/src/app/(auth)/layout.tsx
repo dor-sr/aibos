@@ -1,6 +1,9 @@
 import { BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 
+// Force dynamic rendering for auth pages to avoid SSR issues with supabase client
+export const dynamic = 'force-dynamic';
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
