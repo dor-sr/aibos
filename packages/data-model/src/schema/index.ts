@@ -8,6 +8,7 @@ export * from './reports';
 export * from './notifications';
 export * from './webhooks';
 export * from './relations';
+export * from './advanced-analytics';
 
 
 

@@ -37,3 +37,16 @@ export {
 
 // Anomaly Detector
 export { realtimeAnomalyDetector } from './anomaly-detector';
+
+// Notification Triggers
+export {
+  NotificationTriggerService,
+  notificationTriggerService,
+  setupNotificationTriggers,
+  DEFAULT_THRESHOLDS,
+} from './notification-triggers';
+export type {
+  NotificationThreshold,
+  MetricNotification,
+  NotificationCallback,
+} from './notification-triggers';
