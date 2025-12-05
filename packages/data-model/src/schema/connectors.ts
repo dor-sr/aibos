@@ -5,6 +5,7 @@ import { workspaces } from './workspace';
 export const connectorTypeEnum = pgEnum('connector_type', [
   'shopify',
   'tiendanube',
+  'mercadolibre',
   'woocommerce',
   'stripe',
   'ga4',

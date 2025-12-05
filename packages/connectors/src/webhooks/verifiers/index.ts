@@ -6,11 +6,15 @@
 import type { WebhookProvider, WebhookVerifier } from '../types';
 import { stripeVerifier } from './stripe';
 import { shopifyVerifier } from './shopify';
+import { tiendanubeVerifier } from './tiendanube';
+import { mercadolibreVerifier } from './mercadolibre';
 
 // Registry of all verifiers
 const verifiers = new Map<WebhookProvider, WebhookVerifier>();
 verifiers.set('stripe', stripeVerifier);
 verifiers.set('shopify', shopifyVerifier);
+verifiers.set('tiendanube', tiendanubeVerifier);
+verifiers.set('mercadolibre', mercadolibreVerifier);
 
 /**
  * Get the verifier for a provider
@@ -35,5 +39,7 @@ export function getSupportedProviders(): WebhookProvider[] {
 
 export { stripeVerifier } from './stripe';
 export { shopifyVerifier } from './shopify';
+export { tiendanubeVerifier } from './tiendanube';
+export { mercadolibreVerifier } from './mercadolibre';
 
 

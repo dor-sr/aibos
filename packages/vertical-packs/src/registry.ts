@@ -3,6 +3,10 @@ import type { VerticalPack } from './types';
 import { ecommercePack } from './ecommerce';
 import { saasPack } from './saas';
 import { genericPack } from './generic';
+import { hospitalityPack } from './hospitality';
+import { restaurantPack } from './restaurant';
+import { agencyPack } from './agency';
+import { servicesPack } from './services';
 
 /**
  * Registry of all available vertical packs
@@ -10,6 +14,10 @@ import { genericPack } from './generic';
 const verticalPacks: Record<string, VerticalPack> = {
   ecommerce: ecommercePack,
   saas: saasPack,
+  hospitality: hospitalityPack,
+  restaurant: restaurantPack,
+  agency: agencyPack,
+  services: servicesPack,
   generic: genericPack,
 };
 
@@ -46,5 +54,22 @@ export function getSupportedVerticals(): VerticalType[] {
  */
 export function isVerticalSupported(type: string): type is VerticalType {
   return type in verticalPacks;
+}
+
+/**
+ * Get vertical packs by category
+ */
+export function getVerticalPacksByCategory(): {
+  commerce: VerticalPack[];
+  subscription: VerticalPack[];
+  service: VerticalPack[];
+  other: VerticalPack[];
+} {
+  return {
+    commerce: [ecommercePack, restaurantPack, hospitalityPack],
+    subscription: [saasPack],
+    service: [servicesPack, agencyPack],
+    other: [genericPack],
+  };
 }
 

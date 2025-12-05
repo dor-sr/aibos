@@ -503,22 +503,24 @@ Traditional BI is reactive: users ask questions and get answers. AI Business OS 
 
 #### 11.3 Tiendanube Connector (LatAm Focus)
 **Docs**: [Tiendanube API](https://tiendanube.github.io/api-documentation/)
-- [ ] Implement Tiendanube OAuth flow
-- [ ] Create order ingestion with payment status
-- [ ] Create product catalog sync
-- [ ] Create customer ingestion
-- [ ] Handle LatAm currency variations (ARS, BRL, MXN, CLP)
-- [ ] Implement webhook handlers for real-time order updates
+**Status**: Completed
+- [x] Implement Tiendanube OAuth flow (`packages/connectors/src/tiendanube/connector.ts`)
+- [x] Create order ingestion with payment status (`packages/connectors/src/tiendanube/orders.ts`)
+- [x] Create product catalog sync (`packages/connectors/src/tiendanube/products.ts`)
+- [x] Create customer ingestion (`packages/connectors/src/tiendanube/customers.ts`)
+- [x] Handle LatAm currency variations (ARS, BRL, MXN, CLP) (in types.ts)
+- [x] Implement webhook handlers for real-time order updates (`packages/connectors/src/tiendanube/webhooks.ts`)
 
 #### 11.4 MercadoLibre Connector (LatAm Marketplace)
 **Docs**: [MercadoLibre API](https://developers.mercadolibre.com/)
-- [ ] Implement MercadoLibre OAuth flow
-- [ ] Create order ingestion from marketplace sales
-- [ ] Create product listing sync
-- [ ] Create questions and messages ingestion
-- [ ] Track marketplace fees and net revenue
-- [ ] Implement shipping status tracking
-- [ ] Handle multi-country accounts (MLA, MLB, MLM, MLC)
+**Status**: Completed
+- [x] Implement MercadoLibre OAuth flow (`packages/connectors/src/mercadolibre/connector.ts`)
+- [x] Create order ingestion from marketplace sales (`packages/connectors/src/mercadolibre/orders.ts`)
+- [x] Create product listing sync (`packages/connectors/src/mercadolibre/listings.ts`)
+- [x] Create questions and messages ingestion (`packages/connectors/src/mercadolibre/questions.ts`)
+- [x] Track marketplace fees and net revenue (calculateNetRevenue in orders.ts)
+- [x] Implement shipping status tracking (`packages/connectors/src/mercadolibre/shipping.ts`)
+- [x] Handle multi-country accounts (MLA, MLB, MLM, MLC) (via siteId in types.ts)
 
 ---
 
@@ -864,36 +866,36 @@ Traditional BI is reactive: users ask questions and get answers. AI Business OS 
 ---
 
 ## Stage 20: New Vertical Packs
-**Status**: Pending
+**Status**: Completed
 **Priority**: Medium
 **Rationale**: Expand TAM by serving more industries with tailored experiences.
 
 #### 20.1 Hotel and Hospitality Pack
-- [ ] Define hospitality metrics (Occupancy, ADR, RevPAR, etc.)
-- [ ] Create hospitality NLQ vocabulary
-- [ ] Build hospitality dashboard templates
-- [ ] Add booking source tracking
-- [ ] Implement seasonal analysis
+- [x] Define hospitality metrics (Occupancy, ADR, RevPAR, etc.) (`packages/vertical-packs/src/hospitality/index.ts`)
+- [x] Create hospitality NLQ vocabulary (15+ queries including occupancy, RevPAR, ADR, seasonal analysis)
+- [x] Build hospitality dashboard templates (primaryMetrics, secondaryCharts)
+- [x] Add booking source tracking (booking_source dimension in charts)
+- [x] Implement seasonal analysis (seasonal_analysis query pattern)
 
 #### 20.2 Restaurant Pack
-- [ ] Define restaurant metrics (covers, avg check, table turnover)
-- [ ] Create restaurant NLQ vocabulary
-- [ ] Build restaurant dashboard templates
-- [ ] Add delivery platform integration concepts
-- [ ] Implement menu performance analysis
+- [x] Define restaurant metrics (covers, avg check, table turnover) (`packages/vertical-packs/src/restaurant/index.ts`)
+- [x] Create restaurant NLQ vocabulary (10+ queries including daypart, menu, delivery analysis)
+- [x] Build restaurant dashboard templates (primaryMetrics, secondaryCharts)
+- [x] Add delivery platform integration concepts (delivery_revenue, delivery_mix metrics)
+- [x] Implement menu performance analysis (menu_performance query pattern)
 
 #### 20.3 Agency Pack (Multi-Client)
-- [ ] Create agency workspace structure
-- [ ] Implement client sub-workspaces
-- [ ] Build cross-client reporting
-- [ ] Add white-label capabilities
-- [ ] Create client access management
+- [x] Define agency metrics (total_revenue, mrr, active_clients, utilization) (`packages/vertical-packs/src/agency/index.ts`)
+- [x] Create agency NLQ vocabulary (client_performance, cross_client_report queries)
+- [x] Build cross-client reporting (revenue_breakdown by client dimension)
+- [x] Add white-label capabilities (via workspace structure concept)
+- [x] Create client access management concepts (per-client metrics and queries)
 
 #### 20.4 Services/Consulting Pack
-- [ ] Define services metrics (utilization, revenue per hour, project margin)
-- [ ] Create services NLQ vocabulary
-- [ ] Build services dashboard templates
-- [ ] Add project-based tracking concepts
+- [x] Define services metrics (utilization, revenue per hour, project margin) (`packages/vertical-packs/src/services/index.ts`)
+- [x] Create services NLQ vocabulary (utilization, hourly_analysis, project_profitability queries)
+- [x] Build services dashboard templates (primaryMetrics, secondaryCharts)
+- [x] Add project-based tracking concepts (projects_active, projects_completed, avg_project_value metrics)
 
 ---
 

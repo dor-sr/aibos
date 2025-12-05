@@ -17,6 +17,7 @@ export const webhookProviderEnum = pgEnum('webhook_provider', [
   'stripe',
   'shopify',
   'tiendanube',
+  'mercadolibre',
   'woocommerce',
   'meta_ads',
   'google_ads',

@@ -8,6 +8,7 @@ export type WebhookProvider =
   | 'stripe'
   | 'shopify'
   | 'tiendanube'
+  | 'mercadolibre'
   | 'woocommerce'
   | 'meta_ads'
   | 'google_ads'

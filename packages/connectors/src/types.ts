@@ -5,6 +5,7 @@
 export type ConnectorType = 
   | 'shopify'
   | 'tiendanube'
+  | 'mercadolibre'
   | 'woocommerce'
   | 'stripe'
   | 'ga4'
