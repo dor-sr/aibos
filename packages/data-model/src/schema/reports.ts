@@ -32,6 +32,9 @@ export const reports = pgTable(
   ]
 );
 
+// Anomaly status enum
+export const anomalyStatusEnum = pgEnum('anomaly_status', ['active', 'acknowledged', 'resolved', 'dismissed']);
+
 // Detected anomalies
 export const anomalies = pgTable(
   'anomalies',
@@ -51,6 +54,7 @@ export const anomalies = pgTable(
     detectedAt: timestamp('detected_at', { withTimezone: true }).notNull(),
     periodStart: timestamp('period_start', { withTimezone: true }).notNull(),
     periodEnd: timestamp('period_end', { withTimezone: true }).notNull(),
+    status: anomalyStatusEnum('status').notNull().default('active'),
     isAcknowledged: text('is_acknowledged').default('false'),
     acknowledgedBy: text('acknowledged_by'),
     acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
@@ -61,6 +65,7 @@ export const anomalies = pgTable(
     index('anomalies_workspace_idx').on(table.workspaceId),
     index('anomalies_detected_idx').on(table.workspaceId, table.detectedAt),
     index('anomalies_metric_idx').on(table.workspaceId, table.metricName),
+    index('anomalies_status_idx').on(table.workspaceId, table.status),
   ]
 );
 

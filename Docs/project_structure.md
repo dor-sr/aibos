@@ -216,6 +216,13 @@ packages/connectors/
 │   │       ├── index.ts
 │   │       ├── stripe.ts
 │   │       └── shopify.ts
+│   ├── realtime/                 # Real-time data pipeline
+│   │   ├── index.ts              # Public exports
+│   │   ├── types.ts              # Realtime event types
+│   │   ├── event-emitter.ts      # Pub/sub event system
+│   │   ├── event-batch-processor.ts  # Batch processing for high volume
+│   │   ├── metric-service.ts     # Real-time metric recalculation
+│   │   └── anomaly-detector.ts   # Real-time anomaly detection
 │   ├── ga4/
 │   │   └── index.ts              # Scaffold
 │   └── tiendanube/

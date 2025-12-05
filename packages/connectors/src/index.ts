@@ -95,3 +95,30 @@ export {
   STRIPE_SUPPORTED_EVENTS,
   SHOPIFY_SUPPORTED_EVENTS,
 } from './webhooks';
+
+// Real-time Data Pipeline exports
+export {
+  // Event Emitter
+  realtimeEmitter,
+  emitRealtimeEvent,
+  subscribeToEvents,
+  // Event Batch Processor
+  EventBatchProcessor,
+  // Metric Service
+  metricService,
+  triggerMetricRecalculation,
+  // Anomaly Detector
+  realtimeAnomalyDetector,
+  // Types
+  type RealtimeEventType,
+  type RealtimeEvent,
+  type MetricUpdateData,
+  type AnomalyEventData,
+  type EventCallback,
+  type EventSubscription,
+  type EventBatch,
+  type BatchConfig,
+  type MetricRecalculationRequest,
+  type SSEConnection,
+  DEFAULT_BATCH_CONFIG,
+} from './realtime';

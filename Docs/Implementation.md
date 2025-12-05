@@ -520,7 +520,7 @@ Traditional BI is reactive: users ask questions and get answers. AI Business OS 
 ---
 
 ## Stage 12: Real-Time Infrastructure
-**Status**: In Progress
+**Status**: Completed (12.1, 12.2) / Pending (12.3)
 **Priority**: High
 **Rationale**: Polling is inefficient and delayed. Real-time webhooks enable instant insights and faster anomaly detection.
 
@@ -534,11 +534,13 @@ Traditional BI is reactive: users ask questions and get answers. AI Business OS 
 - [x] Create webhook management UI in connectors page
 
 #### 12.2 Real-Time Data Pipeline
-- [ ] Implement event streaming from webhooks to database
-- [ ] Create real-time metric recalculation triggers
-- [ ] Implement WebSocket/SSE for dashboard live updates
-- [ ] Add real-time anomaly detection on incoming events
-- [ ] Create event batching for high-volume sources
+- [x] Implement event streaming from webhooks to database
+- [x] Create real-time metric recalculation triggers (`packages/connectors/src/realtime/metric-service.ts`)
+- [x] Implement WebSocket/SSE for dashboard live updates (`/api/realtime/stream` endpoint)
+- [x] Add real-time anomaly detection on incoming events (`packages/connectors/src/realtime/anomaly-detector.ts`)
+- [x] Create event batching for high-volume sources (`packages/connectors/src/realtime/event-batch-processor.ts`)
+- [x] Create useRealtime React hook for dashboard components
+- [x] Update MetricCards component with live updates indicator
 
 #### 12.3 Supabase Realtime Integration
 - [ ] Enable Supabase Realtime on key tables

@@ -14,6 +14,7 @@ import { processCustomer, deleteCustomerByExternalId } from '../../stripe/custom
 import { processPlan, deactivatePlan } from '../../stripe/plans';
 import { processSubscription, cancelSubscription } from '../../stripe/subscriptions';
 import { processInvoice, markInvoicePaid, markInvoiceVoid } from '../../stripe/invoices';
+import { emitRealtimeEvent, triggerMetricRecalculation, type RealtimeEventType } from '../../realtime';
 
 const logger = createLogger('webhook:stripe:processor');
 
@@ -62,6 +63,10 @@ export class StripeEventProcessor implements WebhookEventProcessor {
 
     logger.debug('Processing Stripe event', { eventType, eventId: event.id });
 
+    let result: WebhookProcessingResult;
+    let realtimeEventType: RealtimeEventType | null = null;
+    let realtimeEventData: Record<string, unknown> = {};
+
     try {
       switch (eventType) {
         // Customer events
@@ -69,23 +74,31 @@ export class StripeEventProcessor implements WebhookEventProcessor {
         case 'customer.updated': {
           const customer = data as unknown as Stripe.Customer;
           await processCustomer(customer, workspaceId);
-          return {
+          realtimeEventType = eventType === 'customer.created' ? 'customer.created' : 'customer.updated';
+          realtimeEventData = {
+            customerId: customer.id,
+            email: customer.email,
+            name: customer.name,
+          };
+          result = {
             success: true,
             eventType,
             objectId: customer.id,
             action: eventType === 'customer.created' ? 'created' : 'updated',
           };
+          break;
         }
 
         case 'customer.deleted': {
           const customer = data as unknown as Stripe.Customer;
           await deleteCustomerByExternalId(workspaceId, customer.id);
-          return {
+          result = {
             success: true,
             eventType,
             objectId: customer.id,
             action: 'deleted',
           };
+          break;
         }
 
         // Price events (we treat prices as plans)
@@ -95,23 +108,25 @@ export class StripeEventProcessor implements WebhookEventProcessor {
           if (price.type === 'recurring') {
             await processPlan(price, undefined, workspaceId);
           }
-          return {
+          result = {
             success: true,
             eventType,
             objectId: price.id,
             action: eventType === 'price.created' ? 'created' : 'updated',
           };
+          break;
         }
 
         case 'price.deleted': {
           const price = data as unknown as Stripe.Price;
           await deactivatePlan(workspaceId, price.id);
-          return {
+          result = {
             success: true,
             eventType,
             objectId: price.id,
             action: 'deactivated',
           };
+          break;
         }
 
         // Product events (handled via price sync)
@@ -119,13 +134,16 @@ export class StripeEventProcessor implements WebhookEventProcessor {
         case 'product.updated':
         case 'product.deleted': {
           const product = data as unknown as Stripe.Product;
-          return {
+          realtimeEventType = 'product.created';
+          realtimeEventData = { productId: product.id, name: product.name };
+          result = {
             success: true,
             eventType,
             objectId: product.id,
             action: 'acknowledged',
             message: 'Product events handled via price sync',
           };
+          break;
         }
 
         // Subscription events
@@ -133,23 +151,36 @@ export class StripeEventProcessor implements WebhookEventProcessor {
         case 'customer.subscription.updated': {
           const subscription = data as unknown as Stripe.Subscription;
           await processSubscription(subscription, workspaceId);
-          return {
+          realtimeEventType = eventType.includes('created') ? 'subscription.created' : 'subscription.updated';
+          realtimeEventData = {
+            subscriptionId: subscription.id,
+            status: subscription.status,
+            customerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id,
+          };
+          result = {
             success: true,
             eventType,
             objectId: subscription.id,
             action: eventType.includes('created') ? 'created' : 'updated',
           };
+          break;
         }
 
         case 'customer.subscription.deleted': {
           const subscription = data as unknown as Stripe.Subscription;
           await cancelSubscription(workspaceId, subscription.id);
-          return {
+          realtimeEventType = 'subscription.canceled';
+          realtimeEventData = {
+            subscriptionId: subscription.id,
+            status: 'canceled',
+          };
+          result = {
             success: true,
             eventType,
             objectId: subscription.id,
             action: 'canceled',
           };
+          break;
         }
 
         // Invoice events
@@ -160,12 +191,13 @@ export class StripeEventProcessor implements WebhookEventProcessor {
           if (invoice.id) {
             await processInvoice(invoice, workspaceId);
           }
-          return {
+          result = {
             success: true,
             eventType,
             objectId: invoice.id ?? 'unknown',
             action: eventType.split('.')[1] ?? 'updated',
           };
+          break;
         }
 
         case 'invoice.paid': {
@@ -180,12 +212,19 @@ export class StripeEventProcessor implements WebhookEventProcessor {
                 : undefined
             );
           }
-          return {
+          realtimeEventType = 'invoice.paid';
+          realtimeEventData = {
+            invoiceId: invoice.id,
+            amountPaid: invoice.amount_paid,
+            currency: invoice.currency,
+          };
+          result = {
             success: true,
             eventType,
             objectId: invoice.id ?? 'unknown',
             action: 'paid',
           };
+          break;
         }
 
         case 'invoice.voided': {
@@ -193,12 +232,13 @@ export class StripeEventProcessor implements WebhookEventProcessor {
           if (invoice.id) {
             await markInvoiceVoid(workspaceId, invoice.id);
           }
-          return {
+          result = {
             success: true,
             eventType,
             objectId: invoice.id ?? 'unknown',
             action: 'voided',
           };
+          break;
         }
 
         case 'invoice.payment_failed': {
@@ -206,17 +246,23 @@ export class StripeEventProcessor implements WebhookEventProcessor {
           if (invoice.id) {
             await processInvoice(invoice, workspaceId);
           }
-          return {
+          realtimeEventType = 'invoice.failed';
+          realtimeEventData = {
+            invoiceId: invoice.id,
+            amountDue: invoice.amount_due,
+          };
+          result = {
             success: true,
             eventType,
             objectId: invoice.id ?? 'unknown',
             action: 'payment_failed',
           };
+          break;
         }
 
         default: {
           logger.debug('Unhandled event type', { eventType });
-          return {
+          result = {
             success: true,
             eventType,
             objectId: 'unknown',
@@ -225,6 +271,24 @@ export class StripeEventProcessor implements WebhookEventProcessor {
           };
         }
       }
+
+      // Emit real-time event if applicable
+      if (result.success && realtimeEventType) {
+        emitRealtimeEvent({
+          type: realtimeEventType,
+          workspaceId,
+          data: {
+            ...realtimeEventData,
+            sourceEventId: event.id,
+            sourceEventType: eventType,
+          },
+        });
+
+        // Trigger metric recalculation for events that affect metrics
+        triggerMetricRecalculation(workspaceId, realtimeEventType, event.id);
+      }
+
+      return result;
     } catch (err) {
       logger.error('Failed to process Stripe event', err as Error, {
         eventType,
