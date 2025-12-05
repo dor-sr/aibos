@@ -291,3 +291,4 @@ export async function DELETE(request: Request, context: RouteParams) {
     return NextResponse.json({ error: 'Failed to revoke share' }, { status: 500 });
   }
 }
+

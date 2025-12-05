@@ -176,3 +176,4 @@ export function WidgetLibrary({ onAddWidget }: WidgetLibraryProps) {
 
 export { WIDGET_TYPES };
 export type { WidgetType };
+

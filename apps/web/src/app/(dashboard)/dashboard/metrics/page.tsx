@@ -706,3 +706,4 @@ export default function CustomMetricsPage() {
     </div>
   );
 }
+

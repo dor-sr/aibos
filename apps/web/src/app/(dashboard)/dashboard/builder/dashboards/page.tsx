@@ -314,3 +314,4 @@ export default function DashboardsListPage() {
     </div>
   );
 }
+

@@ -295,3 +295,4 @@ function DividerWidget() {
 }
 
 export type { WidgetData };
+

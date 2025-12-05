@@ -560,3 +560,4 @@ export default function DashboardBuilderPage() {
     </div>
   );
 }
+
