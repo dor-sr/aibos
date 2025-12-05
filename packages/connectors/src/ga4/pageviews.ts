@@ -163,3 +163,4 @@ export async function syncGA4Pageviews(
     throw error;
   }
 }
+

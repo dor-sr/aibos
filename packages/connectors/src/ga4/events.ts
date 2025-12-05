@@ -169,3 +169,4 @@ export async function syncGA4Events(
     throw error;
   }
 }
+

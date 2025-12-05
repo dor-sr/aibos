@@ -341,3 +341,4 @@ export interface WebhookGatewayResult {
 
 // Export singleton instance
 export const webhookGateway = new WebhookGateway();
+

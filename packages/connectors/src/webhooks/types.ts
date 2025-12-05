@@ -99,3 +99,4 @@ export const DEFAULT_GATEWAY_CONFIG: WebhookGatewayConfig = {
   retryMaxDelayMs: 60000,
   logAllEvents: true,
 };
+

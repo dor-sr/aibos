@@ -695,3 +695,4 @@ export async function updateUserNotificationPreferences(
 ) {
   return getInAppProvider().updateUserPreferences(userId, workspaceId, preferences);
 }
+

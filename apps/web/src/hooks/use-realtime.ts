@@ -236,3 +236,4 @@ export function useRealtime(options: UseRealtimeOptions = {}): UseRealtimeReturn
 
 // Export types for consumers
 export type { RealtimeMetricUpdate, RealtimeAnomaly, UseRealtimeOptions, UseRealtimeReturn };
+

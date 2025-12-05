@@ -3,7 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { BarChart3, Settings, Plug, FileText, Megaphone, Package } from 'lucide-react';
+import {
+  BarChart3,
+  Settings,
+  Plug,
+  FileText,
+  Megaphone,
+  Package,
+  LayoutGrid,
+  Calculator,
+  Filter,
+  Download,
+} from 'lucide-react';
 
 const navItems = [
   {
@@ -30,6 +41,26 @@ const navItems = [
     title: 'Reports',
     href: '/dashboard/reports' as const,
     icon: FileText,
+  },
+  {
+    title: 'Dashboards',
+    href: '/dashboard/builder/dashboards' as const,
+    icon: LayoutGrid,
+  },
+  {
+    title: 'Custom Metrics',
+    href: '/dashboard/metrics' as const,
+    icon: Calculator,
+  },
+  {
+    title: 'Saved Views',
+    href: '/dashboard/views' as const,
+    icon: Filter,
+  },
+  {
+    title: 'Exports',
+    href: '/dashboard/exports' as const,
+    icon: Download,
   },
   {
     title: 'Settings',

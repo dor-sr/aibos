@@ -794,37 +794,37 @@ Traditional BI is reactive: users ask questions and get answers. AI Business OS 
 ---
 
 ## Stage 18: Custom Dashboards and Saved Views
-**Status**: Pending
+**Status**: Completed
 **Priority**: Medium
 **Rationale**: Power users want customization. This increases engagement and value perception.
 
 #### 18.1 Dashboard Builder
-- [ ] Create drag-and-drop dashboard editor
-- [ ] Implement widget library (metrics, charts, tables, text)
-- [ ] Add widget configuration panels
-- [ ] Create dashboard templates per vertical
-- [ ] Implement dashboard sharing
+- [x] Create drag-and-drop dashboard editor (`apps/web/src/app/(dashboard)/dashboard/builder/page.tsx`)
+- [x] Implement widget library (metrics, charts, tables, text) (`components/dashboard/builder/widget-library.tsx`)
+- [x] Add widget configuration panels (`components/dashboard/builder/widget-config-panel.tsx`)
+- [x] Create dashboard templates per vertical (`/api/dashboards/templates`)
+- [x] Implement dashboard sharing (`/api/dashboards/[dashboardId]/share`)
 
 #### 18.2 Custom Metrics
-- [ ] Create metric builder UI
-- [ ] Implement formula-based custom metrics
-- [ ] Add metric validation and preview
-- [ ] Create metric library for workspace
-- [ ] Enable custom metrics in NLQ
+- [x] Create metric builder UI (`apps/web/src/app/(dashboard)/dashboard/metrics/page.tsx`)
+- [x] Implement formula-based custom metrics (simple, calculated, SQL types)
+- [x] Add metric validation and preview (`/api/metrics/custom`)
+- [x] Create metric library for workspace (categories, search, filtering)
+- [x] Enable custom metrics in NLQ (nlqKeywords, nlqExamples fields)
 
 #### 18.3 Saved Views and Filters
-- [ ] Implement filter presets
-- [ ] Create date range presets (custom periods)
-- [ ] Add segment-based views
-- [ ] Implement view sharing within team
-- [ ] Create default view preferences
+- [x] Implement filter presets (`apps/web/src/app/(dashboard)/dashboard/views/page.tsx`)
+- [x] Create date range presets (custom periods) (`/api/views/filters`)
+- [x] Add segment-based views (via filter preset types)
+- [x] Implement view sharing within team (isShared flag)
+- [x] Create default view preferences (`/api/views/preferences`)
 
 #### 18.4 Export and Reporting
-- [ ] Implement PDF export for dashboards
-- [ ] Create CSV/Excel export for data tables
-- [ ] Add scheduled report delivery
-- [ ] Implement white-label PDF reports
-- [ ] Create presentation mode
+- [x] Implement PDF export for dashboards (`/api/exports`)
+- [x] Create CSV/Excel export for data tables (`/api/exports/download/[jobId]`)
+- [x] Add scheduled report delivery (`scheduledExports` table, frequency options)
+- [x] Implement white-label PDF reports (whiteLabelConfig in schema)
+- [x] Create presentation mode (viewMode in dashboard builder)
 
 ---
 

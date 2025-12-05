@@ -408,3 +408,4 @@ export class GA4Client {
 }
 
 export type { GA4ClientConfig };
+

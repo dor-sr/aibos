@@ -192,3 +192,4 @@ export const GA4_CONVERSION_EVENTS = [
 ] as const;
 
 export type GA4ConversionEvent = typeof GA4_CONVERSION_EVENTS[number];
+

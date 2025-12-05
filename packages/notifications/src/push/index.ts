@@ -429,3 +429,4 @@ export async function removePushSubscription(userId: string, endpoint: string) {
 export function getVapidPublicKey(): string | null {
   return getPushProvider().getVapidPublicKey();
 }
+

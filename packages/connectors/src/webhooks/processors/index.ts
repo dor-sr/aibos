@@ -29,3 +29,4 @@ export function getSupportedEvents(provider: WebhookProvider): string[] {
 
 export { stripeProcessor, STRIPE_SUPPORTED_EVENTS } from './stripe';
 export { shopifyProcessor, SHOPIFY_SUPPORTED_EVENTS } from './shopify';
+

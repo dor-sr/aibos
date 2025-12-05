@@ -313,3 +313,4 @@ export const realtimeAnomalyDetector = new RealtimeAnomalyDetector();
 
 // Initialize on module load
 realtimeAnomalyDetector.initialize();
+

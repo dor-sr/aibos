@@ -119,3 +119,4 @@ export type WebhookEvent = typeof webhookEvents.$inferSelect;
 export type NewWebhookEvent = typeof webhookEvents.$inferInsert;
 export type WebhookConfig = typeof webhookConfigs.$inferSelect;
 export type NewWebhookConfig = typeof webhookConfigs.$inferInsert;
+

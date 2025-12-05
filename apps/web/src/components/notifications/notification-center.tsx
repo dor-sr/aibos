@@ -335,3 +335,4 @@ export function NotificationCenter({ workspaceId }: NotificationCenterProps) {
     </Popover>
   );
 }
+
