@@ -22,45 +22,36 @@ export interface SlackProviderConfig {
 }
 
 /**
+ * Slack Block Kit element types
+ */
+interface SlackTextElement {
+  type: 'plain_text' | 'mrkdwn';
+  text: string;
+  emoji?: boolean;
+}
+
+interface SlackButtonElement {
+  type: 'button';
+  text: SlackTextElement;
+  url?: string;
+  action_id?: string;
+}
+
+/**
  * Slack Block Kit block types
  */
 interface SlackBlock {
   type: string;
-  text?: {
-    type: string;
-    text: string;
-    emoji?: boolean;
-  };
-  fields?: Array<{
-    type: string;
-    text: string;
-  }>;
-  elements?: Array<{
-    type: string;
-    text?: {
-      type: string;
-      text: string;
-      emoji?: boolean;
-    };
-    url?: string;
-    action_id?: string;
-  }>;
-  accessory?: {
-    type: string;
-    text?: {
-      type: string;
-      text: string;
-      emoji?: boolean;
-    };
-    url?: string;
-    action_id?: string;
-  };
+  text?: SlackTextElement;
+  fields?: SlackTextElement[];
+  elements?: (SlackTextElement | SlackButtonElement)[];
+  accessory?: SlackButtonElement;
 }
 
 /**
  * Slack notification provider
  *
- * This is a scaffold implementation. Supports:
+ * Production implementation supporting:
  * - Incoming Webhooks (simple, no auth required)
  * - Bot Token API (full Slack API access)
  */
@@ -150,38 +141,17 @@ export class SlackNotificationProvider implements NotificationProvider {
         thread_ts: options?.threadTs,
       };
 
-      // TODO: Implement actual Slack sending
-      // This is a scaffold - integrate with Slack API
-
-      /*
-      // Using Incoming Webhook:
-      const response = await fetch(this.config.webhookUrl!, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(message),
-      });
-
-      // Using Bot Token (Slack Web API):
-      import { WebClient } from '@slack/web-api';
-      const client = new WebClient(this.config.botToken);
-      const result = await client.chat.postMessage({
-        channel: message.channel,
-        text: message.text,
-        blocks: message.blocks,
-      });
-      */
-
-      // Scaffold: Log the message that would be sent
-      logger.info('Slack notification prepared (scaffold mode)', {
-        channel: message.channel,
-        blocksCount: blocks.length,
-      });
+      // Send using webhook or bot token
+      if (this.config!.webhookUrl) {
+        return await this.sendWithWebhook(message);
+      } else if (this.config!.botToken) {
+        return await this.sendWithBotToken(message);
+      }
 
       return {
-        success: true,
+        success: false,
         channel: 'slack',
-        messageId: `slack_${Date.now()}`,
-        sentAt: new Date(),
+        error: 'No webhook URL or bot token configured',
       };
     } catch (error) {
       logger.error('Failed to send Slack notification', error as Error, {
@@ -195,6 +165,95 @@ export class SlackNotificationProvider implements NotificationProvider {
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  }
+
+  /**
+   * Send message using Incoming Webhook
+   */
+  private async sendWithWebhook(message: {
+    text: string;
+    blocks: SlackBlock[];
+    channel?: string;
+    username?: string;
+    icon_emoji?: string;
+    thread_ts?: string;
+  }): Promise<NotificationResult> {
+    const response = await fetch(this.config!.webhookUrl!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(message),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error('Slack webhook error', new Error(errorText), {
+        status: response.status,
+      });
+      return {
+        success: false,
+        channel: 'slack',
+        error: `Slack webhook error: ${response.status} - ${errorText}`,
+      };
+    }
+
+    logger.info('Slack notification sent via webhook');
+
+    return {
+      success: true,
+      channel: 'slack',
+      messageId: `slack_webhook_${Date.now()}`,
+      sentAt: new Date(),
+    };
+  }
+
+  /**
+   * Send message using Bot Token (Slack Web API)
+   */
+  private async sendWithBotToken(message: {
+    text: string;
+    blocks: SlackBlock[];
+    channel?: string;
+    username?: string;
+    icon_emoji?: string;
+    thread_ts?: string;
+  }): Promise<NotificationResult> {
+    const response = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config!.botToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        channel: message.channel,
+        text: message.text,
+        blocks: message.blocks,
+        username: message.username,
+        icon_emoji: message.icon_emoji,
+        thread_ts: message.thread_ts,
+      }),
+    });
+
+    const result = await response.json() as { ok: boolean; error?: string; ts?: string };
+
+    if (!result.ok) {
+      logger.error('Slack API error', new Error(result.error || 'Unknown error'));
+      return {
+        success: false,
+        channel: 'slack',
+        error: `Slack API error: ${result.error}`,
+      };
+    }
+
+    logger.info('Slack notification sent via Bot Token', { ts: result.ts });
+
+    return {
+      success: true,
+      channel: 'slack',
+      messageId: result.ts,
+      sentAt: new Date(),
+    };
   }
 
   /**

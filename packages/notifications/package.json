@@ -17,6 +17,14 @@
     "./slack": {
       "types": "./src/slack/index.ts",
       "import": "./src/slack/index.ts"
+    },
+    "./in-app": {
+      "types": "./src/in-app/index.ts",
+      "import": "./src/in-app/index.ts"
+    },
+    "./push": {
+      "types": "./src/push/index.ts",
+      "import": "./src/push/index.ts"
     }
   },
   "scripts": {
@@ -25,7 +33,9 @@
   },
   "dependencies": {
     "@aibos/core": "workspace:*",
-    "@aibos/data-model": "workspace:*"
+    "@aibos/data-model": "workspace:*",
+    "drizzle-orm": "^0.37.0",
+    "resend": "^4.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

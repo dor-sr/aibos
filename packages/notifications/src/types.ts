@@ -3,7 +3,7 @@ import type { VerticalType } from '@aibos/core';
 /**
  * Supported notification channels
  */
-export type NotificationChannel = 'email' | 'slack' | 'webhook';
+export type NotificationChannel = 'email' | 'slack' | 'webhook' | 'in_app' | 'push';
 
 /**
  * Notification types
@@ -14,7 +14,9 @@ export type NotificationType =
   | 'sync_completed'
   | 'sync_failed'
   | 'welcome'
-  | 'system';
+  | 'system'
+  | 'insight'
+  | 'mention';
 
 /**
  * Notification status

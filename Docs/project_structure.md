@@ -17,9 +17,10 @@ aibos/
 │   ├── connectors/               # Data source integrations
 │   ├── ai-runtime/               # LLM abstraction layer
 │   ├── analytics-agent/          # Analytics Agent logic
-│   ├── marketing-agent/          # Marketing Agent scaffold
-│   ├── commerce-ops-agent/       # Commerce Ops Agent scaffold
-│   └── vertical-packs/           # Vertical configurations
+│   ├── marketing-agent/          # Marketing Agent (full implementation)
+│   ├── commerce-ops-agent/       # Commerce Ops Agent (full implementation)
+│   ├── vertical-packs/           # Vertical configurations
+│   └── notifications/            # Notification system (email, Slack, in-app, push)
 ├── Docs/                         # Project documentation
 ├── .cursor/                      # Cursor IDE configuration
 ├── turbo.json                    # Turborepo configuration
