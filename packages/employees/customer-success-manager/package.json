@@ -1,0 +1,23 @@
+{
+  "name": "@aibos/employee-customer-success",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aibos/core": "workspace:*",
+    "@aibos/data-model": "workspace:*",
+    "@aibos/ai-runtime": "workspace:*",
+    "@aibos/employee-core": "workspace:*",
+    "@aibos/communication-hub": "workspace:*",
+    "@aibos/analytics-agent": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
+

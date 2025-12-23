@@ -24,7 +24,9 @@ aibos/
 │   ├── employee-core/            # AI Employee core framework
 │   ├── communication-hub/        # Multi-channel communication system
 │   └── employees/                # AI Employee implementations
-│       └── project-manager/      # AI Project Manager
+│       ├── project-manager/      # AI Project Manager
+│       ├── customer-success-manager/ # AI Customer Success Manager
+│       └── sales-development-rep/ # AI Sales Development Rep
 ├── Docs/                         # Project documentation
 ├── .cursor/                      # Cursor IDE configuration
 ├── turbo.json                    # Turborepo configuration

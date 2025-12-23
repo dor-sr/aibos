@@ -341,11 +341,61 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
+  packages/employees/customer-success-manager:
+    dependencies:
+      '@aibos/ai-runtime':
+        specifier: workspace:*
+        version: link:../../ai-runtime
+      '@aibos/analytics-agent':
+        specifier: workspace:*
+        version: link:../../analytics-agent
+      '@aibos/communication-hub':
+        specifier: workspace:*
+        version: link:../../communication-hub
+      '@aibos/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@aibos/data-model':
+        specifier: workspace:*
+        version: link:../../data-model
+      '@aibos/employee-core':
+        specifier: workspace:*
+        version: link:../../employee-core
+    devDependencies:
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
   packages/employees/project-manager:
     dependencies:
       '@aibos/ai-runtime':
         specifier: workspace:*
         version: link:../../ai-runtime
+      '@aibos/communication-hub':
+        specifier: workspace:*
+        version: link:../../communication-hub
+      '@aibos/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@aibos/data-model':
+        specifier: workspace:*
+        version: link:../../data-model
+      '@aibos/employee-core':
+        specifier: workspace:*
+        version: link:../../employee-core
+    devDependencies:
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/employees/sales-development-rep:
+    dependencies:
+      '@aibos/ai-runtime':
+        specifier: workspace:*
+        version: link:../../ai-runtime
+      '@aibos/analytics-agent':
+        specifier: workspace:*
+        version: link:../../analytics-agent
       '@aibos/communication-hub':
         specifier: workspace:*
         version: link:../../communication-hub
