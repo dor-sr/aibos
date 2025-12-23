@@ -242,6 +242,22 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/communication-hub:
+    dependencies:
+      '@aibos/core':
+        specifier: workspace:*
+        version: link:../core
+      '@aibos/data-model':
+        specifier: workspace:*
+        version: link:../data-model
+      '@aibos/employee-core':
+        specifier: workspace:*
+        version: link:../employee-core
+    devDependencies:
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
   packages/connector-sdk:
     dependencies:
       zod:
@@ -307,6 +323,44 @@ importers:
         version: 0.30.6
       typescript:
         specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/employee-core:
+    dependencies:
+      '@aibos/ai-runtime':
+        specifier: workspace:*
+        version: link:../ai-runtime
+      '@aibos/core':
+        specifier: workspace:*
+        version: link:../core
+      '@aibos/data-model':
+        specifier: workspace:*
+        version: link:../data-model
+    devDependencies:
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/employees/project-manager:
+    dependencies:
+      '@aibos/ai-runtime':
+        specifier: workspace:*
+        version: link:../../ai-runtime
+      '@aibos/communication-hub':
+        specifier: workspace:*
+        version: link:../../communication-hub
+      '@aibos/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@aibos/data-model':
+        specifier: workspace:*
+        version: link:../../data-model
+      '@aibos/employee-core':
+        specifier: workspace:*
+        version: link:../../employee-core
+    devDependencies:
+      typescript:
+        specifier: ^5.3.0
         version: 5.9.3
 
   packages/marketing-agent:

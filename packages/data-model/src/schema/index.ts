@@ -15,6 +15,9 @@ export * from './inventory';
 export * from './team';
 export * from './dashboards';
 export * from './developer';
+export * from './employees';
+export * from './contacts';
+export * from './projects';
 
 
 

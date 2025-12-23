@@ -20,7 +20,11 @@ aibos/
 │   ├── marketing-agent/          # Marketing Agent (full implementation)
 │   ├── commerce-ops-agent/       # Commerce Ops Agent (full implementation)
 │   ├── vertical-packs/           # Vertical configurations
-│   └── notifications/            # Notification system (email, Slack, in-app, push)
+│   ├── notifications/            # Notification system (email, Slack, in-app, push)
+│   ├── employee-core/            # AI Employee core framework
+│   ├── communication-hub/        # Multi-channel communication system
+│   └── employees/                # AI Employee implementations
+│       └── project-manager/      # AI Project Manager
 ├── Docs/                         # Project documentation
 ├── .cursor/                      # Cursor IDE configuration
 ├── turbo.json                    # Turborepo configuration
